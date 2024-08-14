@@ -2,11 +2,11 @@
 
 /**
  * Plugin Name: Autonami Marketing Automations Connectors - SMSC.ru
- * Plugin URI: https://buildwoofunnels.com
+ * Plugin URI: https://my.mamatov.club
  * Description: Now create SMSC.ru based automations with Autonami Marketing Automations for WordPress
  * Version: 1.0.0
- * Author: WooFunnels
- * Author URI: https://buildwoofunnels.com
+ * Author: Evgenii Rezanov
+ * Author URI: https://evgrezanov.github.io
  * License: GPLv3 or later
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html
  * Text Domain: autonami-automations-connectors
