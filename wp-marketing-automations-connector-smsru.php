@@ -31,6 +31,9 @@ final class WFCO_SMSCRU {
 
         // Загрузка общих файлов
         $this->load_commons();
+
+        // Загрузка файла для тестовой интеграции
+        $this->load_test_integration();
     }
 
     // Определение констант
@@ -49,6 +52,11 @@ final class WFCO_SMSCRU {
         add_action( 'wfco_load_connectors', [ $this, 'load_connector_classes' ] );
         add_action( 'bwfan_automations_loaded', [ $this, 'load_autonami_classes' ] );
         add_action( 'bwfan_loaded', [ $this, 'init_smscru' ] );
+    }
+
+    // Загрузка файла для тестовой интеграции
+    public function load_test_integration() {
+        require_once plugin_dir_path(__FILE__) . 'class-bwfan-smscru-test-integration.php';
     }
 
     public static function get_instance() {
