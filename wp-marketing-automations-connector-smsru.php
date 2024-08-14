@@ -31,6 +31,9 @@ final class WFCO_SMSCRU {
 
         // Загрузка общих файлов
         $this->load_commons();
+
+        // Загрузка файла для тестовой интеграции
+        $this->load_test_integration();
     }
 
     // Определение констант
