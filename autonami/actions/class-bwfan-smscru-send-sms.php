@@ -1,5 +1,8 @@
 <?php
 
+if ( ! class_exists( 'BWFAN_Action' ) ) {
+    require_once WP_PLUGIN_DIR . '/wp-marketing-automations/includes/abstracts/class-bwfan-action.php';
+}
 class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
     private static $instance = null;
     private $progress = false;
@@ -58,8 +61,6 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
         $data_to_set['login']    = isset( $step_data['connector_data']['login'] ) ? $step_data['connector_data']['login'] : '';
         $data_to_set['password'] = isset( $step_data['connector_data']['password'] ) ? $step_data['connector_data']['password'] : '';
 
-        // UTM параметры и другие настройки
-
         $data_to_set['text'] = stripslashes( $data_to_set['text'] );
         $data_to_set['text'] = BWFAN_Connectors_Common::modify_sms_body( $data_to_set['text'], $data_to_set );
 
@@ -68,20 +69,15 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
     }
 
     public function execute_action( $action_data ) {
-        BWFAN_Core()->logger->log("Starting execute_action for SMSC.ru SMS. Data: " . print_r($action_data, true), 'smscru_send_sms');
+        BWFAN_Core()->logger->log( "Starting execute_action for SMSC.ru SMS", 'smscru_send_sms' );
         
         $this->set_data( $action_data['processed_data'] );
 
-        // Проверка наличия необходимых данных
         if ( empty( $this->data['login'] ) || empty( $this->data['password'] ) || empty( $this->data['number'] ) || empty( $this->data['text'] ) ) {
-            BWFAN_Core()->logger->log("Missing required data for SMS send", 'smscru_send_sms');
-            return array(
-                'status'  => 4,
-                'message' => __( 'Missing required data for SMS send', 'autonami-automations-connectors' ),
-            );
+            BWFAN_Core()->logger->log( "Missing required data for SMS send", 'smscru_send_sms' );
+            return $this->error_response( __( 'Missing required data for SMS send', 'autonami-automations-connectors' ) );
         }
 
-        // Проверка на промо-рассылку и отписку
         if ( 1 === absint( $this->data['promotional_sms'] ) ) {
             $where = array(
                 'recipient' => $this->data['number'],
@@ -90,11 +86,8 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
             $check_unsubscribe = BWFAN_Model_Message_Unsubscribe::get_message_unsubscribe_row( $where );
 
             if ( ! empty( $check_unsubscribe ) ) {
-                BWFAN_Core()->logger->log("User is unsubscribed. Skipping SMS send.", 'smscru_send_sms');
-                return array(
-                    'status'  => 4,
-                    'message' => __( 'User is already unsubscribed', 'autonami-automations-connectors' ),
-                );
+                BWFAN_Core()->logger->log( "User is unsubscribed. Skipping SMS send.", 'smscru_send_sms' );
+                return $this->error_response( __( 'User is already unsubscribed', 'autonami-automations-connectors' ) );
             }
         }
 
@@ -102,11 +95,8 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
         $call_class     = $load_connector->get_call( 'wfco_smscru_send_sms' );
         
         if ( is_null( $call_class ) ) {
-            BWFAN_Core()->logger->log("Send SMS call not found", 'smscru_send_sms');
-            return array(
-                'status'  => 4,
-                'message' => __( 'Send SMS call not found', 'autonami-automations-connectors' ),
-            );
+            BWFAN_Core()->logger->log( "Send SMS call not found", 'smscru_send_sms' );
+            return $this->error_response( __( 'Send SMS call not found', 'autonami-automations-connectors' ) );
         }
 
         $call_data = array(
@@ -116,30 +106,27 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
             'mes'      => $this->data['text'],
         );
 
-        BWFAN_Core()->logger->log("Preparing to send SMS. Data: " . print_r($call_data, true), 'smscru_send_sms');
+        BWFAN_Core()->logger->log( "Preparing to send SMS", 'smscru_send_sms' );
 
         $call_class->set_data( $call_data );
         $response = $call_class->process();
 
-        BWFAN_Core()->logger->log("SMS send attempt completed. Response: " . print_r($response, true), 'smscru_send_sms');
+        BWFAN_Core()->logger->log( "SMS send attempt completed", 'smscru_send_sms' );
 
         return $this->handle_response_v2( $response );
     }
 
     public function handle_response_v2( $response ) {
         if ( $response['status'] === true ) {
-            BWFAN_Core()->logger->log("SMS sent successfully", 'smscru_send_sms');
+            BWFAN_Core()->logger->log( "SMS sent successfully", 'smscru_send_sms' );
             return array(
                 'status'  => 3,
                 'message' => __( 'SMS sent successfully.', 'autonami-automations-connectors' ),
             );
         } else {
             $error_message = isset($response['message']) ? $response['message'] : 'Unknown error';
-            BWFAN_Core()->logger->log("SMS send failed. Error: " . $error_message, 'smscru_send_sms');
-            return array(
-                'status'  => 4,
-                'message' => sprintf(__( 'SMS send failed: %s', 'autonami-automations-connectors' ), $error_message),
-            );
+            BWFAN_Core()->logger->log( "SMS send failed. Error: " . $error_message, 'smscru_send_sms' );
+            return $this->error_response( sprintf(__( 'SMS send failed: %s', 'autonami-automations-connectors' ), $error_message) );
         }
     }
 
@@ -165,19 +152,17 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
                 "description" => '',
                 "required"    => true,
             ],
-            // Другие поля...
         ];
     }
 
-    // Новый метод для тестовой отправки SMS
     public function send_test_sms($phone, $message) {
-        BWFAN_Core()->logger->log("Sending test SMS to: $phone", 'smscru_send_sms');
+        BWFAN_Core()->logger->log( "Sending test SMS to: $phone", 'smscru_send_sms' );
         
         $load_connector = WFCO_Load_Connectors::get_instance();
         $call_class     = $load_connector->get_call( 'wfco_smscru_send_sms' );
         
         if ( is_null( $call_class ) ) {
-            BWFAN_Core()->logger->log("Send SMS call not found for test", 'smscru_send_sms');
+            BWFAN_Core()->logger->log( "Send SMS call not found for test", 'smscru_send_sms' );
             return false;
         }
 
@@ -191,9 +176,31 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
         $call_class->set_data( $call_data );
         $response = $call_class->process();
 
-        BWFAN_Core()->logger->log("Test SMS send attempt completed. Response: " . print_r($response, true), 'smscru_send_sms');
+        BWFAN_Core()->logger->log( "Test SMS send attempt completed", 'smscru_send_sms' );
 
         return $response['status'] === true;
+    }
+
+    // Добавленный метод add_action
+    public function add_action() {
+        $this->progress = true;
+    }
+
+    // Добавленный метод remove_action
+    public function remove_action() {
+        $this->progress = false;
+    }
+
+    // Вспомогательный метод для возврата ошибки
+    public function error_response($message = '') {
+        if (empty($message)) {
+            $message = __('Unknown error occurred', 'wp-marketing-automations');
+        }
+    
+        return array(
+            'status'  => self::$RESPONSE_FAILED,
+            'message' => $message,
+        );
     }
 }
 
