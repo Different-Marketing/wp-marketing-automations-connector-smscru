@@ -22,7 +22,25 @@ class BWFAN_SMSCRU_Test_Integration {
     private function __construct() {
         add_action('admin_menu', array($this, 'add_test_menu'));
         add_action('wp_ajax_smscru_send_test_sms', array($this, 'ajax_send_test_sms'));
+        add_action('admin_enqueue_scripts', array($this, 'enqueue_scripts'));
     }
+
+    public function enqueue_scripts($hook) {
+        if ('tools_page_smscru-test-sms' !== $hook) {
+            return;
+        }
+    
+        wp_enqueue_script('jquery');
+        wp_enqueue_script('smscru-test-script', plugin_dir_url(__FILE__) . 'js/smscru-test.js', array('jquery'), time(), true);
+        $smscru_ajax = array(
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('smscru_test_sms')
+        );
+        wp_localize_script('smscru-test-script', 'smscru_ajax', $smscru_ajax);
+        
+        error_log('SMSCRU Test Script Enqueued');
+        error_log('SMSCRU AJAX Data: ' . print_r($smscru_ajax, true));
+    } 
 
     /**
      * Добавляет пункт меню для тестовой страницы в админ-панель WordPress
@@ -54,36 +72,6 @@ class BWFAN_SMSCRU_Test_Integration {
             </form>
             <div id="result-message" style="margin-top: 15px;"></div>
         </div>
-        <script type="text/javascript">
-            jQuery(document).ready(function($) {
-                $('#smscru-test-form').on('submit', function(e) {
-                    e.preventDefault();
-                    var phone = $('#test-phone').val();
-                    var message = $('#test-message').val();
-                    $.ajax({
-                        url: ajaxurl,
-                        type: 'POST',
-                        data: {
-                            action: 'smscru_send_test_sms',
-                            phone: phone,
-                            message: message,
-                            security: '<?php echo wp_create_nonce("smscru_test_sms"); ?>'
-                        },
-                        success: function(response) {
-                            if(response.success) {
-                                $('#result-message').html(response.data);
-                            } else {
-                                $('#result-message').html('Ошибка: ' + response.data);
-                            }
-                        },
-                        error: function(jqXHR, textStatus, errorThrown) {
-                            $('#result-message').html('Произошла ошибка при отправке запроса: ' + textStatus);
-                            console.error(errorThrown);
-                        }
-                    });
-                });
-            });
-        </script>
         <?php
     }
 
@@ -95,6 +83,7 @@ class BWFAN_SMSCRU_Test_Integration {
     
         if (!current_user_can('manage_options')) {
             wp_send_json_error('У вас нет прав для выполнения этого действия');
+            return;
         }
     
         $phone = isset($_POST['phone']) ? sanitize_text_field($_POST['phone']) : '';
@@ -102,26 +91,25 @@ class BWFAN_SMSCRU_Test_Integration {
     
         if (empty($phone) || empty($message)) {
             wp_send_json_error("Пожалуйста, заполните все поля.");
+            return;
+        }
+    
+        // Получаем настройки SMSC.ru
+        $smscru_settings = WFCO_Common::get_single_connector_data('bwfco_smscru');
+        error_log('SMSC.ru settings loaded: ' . print_r($smscru_settings, true));
+    
+        if (empty($smscru_settings) || empty($smscru_settings['login']) || empty($smscru_settings['password'])) {
+            wp_send_json_error("Настройки SMSC.ru не найдены или неполные.");
+            return;
         }
     
         if (!class_exists('BWFAN_SMSCRU_Send_Sms')) {
             wp_send_json_error("Класс BWFAN_SMSCRU_Send_Sms не найден.");
+            return;
         }
     
         $smscru_sender = BWFAN_SMSCRU_Send_Sms::get_instance();
-        
-        // Получаем сохраненные данные коннекторов
-        $saved_data = WFCO_Common::$connectors_saved_data;
-        $smscru_settings = isset($saved_data['bwfco_smscru']) ? $saved_data['bwfco_smscru'] : array();
-    
-        if (empty($smscru_settings)) {
-            wp_send_json_error("Настройки SMSC.ru не найдены.");
-        }
-    
-        $smscru_sender->set_data([
-            'login' => $smscru_settings['login'] ?? '',
-            'password' => $smscru_settings['password'] ?? '',
-        ]);
+        $smscru_sender->set_data($smscru_settings);
     
         $result = $smscru_sender->send_test_sms($phone, $message);
     
@@ -130,6 +118,9 @@ class BWFAN_SMSCRU_Test_Integration {
         } else {
             wp_send_json_error("Ошибка при отправке тестового SMS. Проверьте логи для получения дополнительной информации.");
         }
+    
+        // Убедимся, что скрипт завершается здесь
+        wp_die();
     }
 }
 
