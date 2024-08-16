@@ -4,7 +4,7 @@
  * Plugin Name: Autonami Marketing Automations Connectors - SMSC.ru
  * Plugin URI: https://my.mamatov.club
  * Description: Now create SMSC.ru based automations with Autonami Marketing Automations for WordPress
- * Version: 1.0.5
+ * Version: 1.0.6
  * Author: Evgenii Rezanov, Claude Ai
  * Author URI: https://evgrezanov.github.io
  * License: GPLv3 or later
@@ -38,7 +38,7 @@ final class WFCO_SMSCRU {
 
     // Определение констант
     public function define_plugin_properties() {
-        define( 'WFCO_SMSCRU_VERSION', '1.0.5' );
+        define( 'WFCO_SMSCRU_VERSION', '1.0.6' );
         define( 'WFCO_SMSCRU_FULL_NAME', 'Autonami Marketing Automations Connectors : SMSC.ru' );
         define( 'WFCO_SMSCRU_PLUGIN_FILE', __FILE__ );
         define( 'WFCO_SMSCRU_PLUGIN_DIR', __DIR__ );
@@ -102,8 +102,12 @@ final class WFCO_SMSCRU {
 
         foreach ($calls as $file => $class) {
             require_once(WFCO_SMSCRU_PLUGIN_DIR . '/calls/' . $file);
-            $call_instance = call_user_func(array($class, 'get_instance'));
-            WFCO_Load_Connectors::register_calls($call_instance);
+            if (method_exists($class, 'get_instance')) {
+                $call_instance = call_user_func(array($class, 'get_instance'));
+                WFCO_Load_Connectors::register_calls($call_instance);
+            } else {
+                error_log("Error: Class $class does not have get_instance method");
+            }
         }
     }
 
