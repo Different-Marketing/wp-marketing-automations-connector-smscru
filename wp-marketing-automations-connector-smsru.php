@@ -4,7 +4,7 @@
  * Plugin Name: Autonami Marketing Automations Connectors - SMSC.ru
  * Plugin URI: https://my.mamatov.club
  * Description: Now create SMSC.ru based automations with Autonami Marketing Automations for WordPress
- * Version: 1.0.3
+ * Version: 1.0.4
  * Author: Evgenii Rezanov, Claude Ai
  * Author URI: https://evgrezanov.github.io
  * License: GPLv3 or later

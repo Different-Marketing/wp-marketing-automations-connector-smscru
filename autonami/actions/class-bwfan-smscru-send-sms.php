@@ -157,18 +157,13 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
 
     public function send_test_sms($phone, $message) {
         error_log("Sending test SMS to: $phone");
-    
+        
         if (empty($this->data['login']) || empty($this->data['password'])) {
             error_log("Missing login or password for SMSC.ru");
             return false;
         }
-
+    
         $load_connector = WFCO_Load_Connectors::get_instance();
-        error_log("Load connector instance: " . print_r($load_connector, true));
-        
-        $all_calls = $load_connector->get_all_calls();
-        error_log("All available calls: " . print_r($all_calls, true));
-        
         $call_class = $load_connector->get_call('wfco_smscru_send_sms');
         
         if (is_null($call_class)) {
@@ -183,20 +178,12 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
             'mes'      => $message,
         );
     
-        error_log("Preparing to send test SMS with data: " . print_r($call_data, true));
-    
         $call_class->set_data($call_data);
         $response = $call_class->process();
     
         error_log("Test SMS send attempt completed. Response: " . print_r($response, true));
     
-        if (!isset($response['status']) || $response['status'] !== true) {
-            $error_message = isset($response['message']) ? $response['message'] : 'Unknown error';
-            error_log("SMS send failed. Error: " . $error_message);
-            return false;
-        }
-    
-        return true;
+        return isset($response['status']) && $response['status'] === true;
     }
 
     // Добавленный метод add_action
