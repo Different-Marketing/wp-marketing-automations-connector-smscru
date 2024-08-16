@@ -111,7 +111,6 @@ class BWFAN_SMSCRU_Test_Integration {
         }
     }
 
-/**
- * Инициализация класса при загрузке плагинов
- */
+}
+
 add_action('plugins_loaded', array('BWFAN_SMSCRU_Test_Integration', 'get_instance'));

@@ -162,8 +162,11 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
             error_log("Missing login or password for SMSC.ru");
             return false;
         }
-    
+
         $load_connector = WFCO_Load_Connectors::get_instance();
+        error_log("Connector instance: " . print_r($load_connector, true));
+        error_log("Available calls: " . print_r($load_connector->get_calls(), true));
+        
         $call_class = $load_connector->get_call('wfco_smscru_send_sms');
         
         if (is_null($call_class)) {
@@ -185,6 +188,8 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
     
         return isset($response['status']) && $response['status'] === true;
     }
+
+
 
     // Добавленный метод add_action
     public function add_action() {
