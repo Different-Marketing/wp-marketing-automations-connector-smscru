@@ -17,7 +17,8 @@ class WFCO_SMSCRU_Send_Sms extends WFCO_Call {
      * @since 1.0.0
      */
     public function __construct() {
-        $this->required_fields = array('login', 'password', 'phones', 'mes');
+        $this->id = 'wfco_smscru_send_sms';
+        $this->group = __( 'SMSC.ru', 'wp-marketing-automations' );
     }
 
     /**
@@ -73,6 +74,12 @@ class WFCO_SMSCRU_Send_Sms extends WFCO_Call {
 
         error_log('SMSC.ru full URL: ' . $url);
 
+        $login = $this->request_data['login'];
+        $password = $this->request_data['password'];
+        $phones = $this->request_data['phones'];
+        $message = $this->request_data['mes'];
+
+        $url = "https://smsc.ru/sys/send.php?login=".urlencode($login)."&psw=".urlencode($password)."&phones=".urlencode($phones)."&mes=".urlencode($message)."&charset=utf-8";
         $response = wp_remote_get($url);
 
         if (is_wp_error($response)) {
@@ -81,12 +88,15 @@ class WFCO_SMSCRU_Send_Sms extends WFCO_Call {
                 'status' => false,
                 'message' => $response->get_error_message(),
             );
+            error_log("SMSC.ru API error: " . $response->get_error_message());
+            return array('status' => false, 'message' => $response->get_error_message());
         }
 
         $body = wp_remote_retrieve_body($response);
         error_log('SMSC.ru API response body: ' . $body);
 
         $result = json_decode($body, true);
+        error_log("SMSC.ru API response: " . $body);
 
         if (isset($result['error'])) {
             error_log('SMSC.ru API error from response: ' . $result['error']);
@@ -101,6 +111,11 @@ class WFCO_SMSCRU_Send_Sms extends WFCO_Call {
             'message' => 'SMS sent successfully',
             'data' => $result,
         );
+        if (strpos($body, 'OK') !== false) {
+            return array('status' => true, 'message' => 'SMS sent successfully');
+        } else {
+            return array('status' => false, 'message' => 'Failed to send SMS: ' . $body);
+        }
     }
 }
 

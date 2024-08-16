@@ -83,7 +83,6 @@ class BWFAN_SMSCRU_Test_Integration {
     
         if (!current_user_can('manage_options')) {
             wp_send_json_error('У вас нет прав для выполнения этого действия');
-            return;
         }
     
         $phone = isset($_POST['phone']) ? sanitize_text_field($_POST['phone']) : '';
@@ -91,21 +90,13 @@ class BWFAN_SMSCRU_Test_Integration {
     
         if (empty($phone) || empty($message)) {
             wp_send_json_error("Пожалуйста, заполните все поля.");
-            return;
         }
     
-        // Получаем настройки SMSC.ru
         $smscru_settings = WFCO_Common::get_single_connector_data('bwfco_smscru');
         error_log('SMSC.ru settings loaded: ' . print_r($smscru_settings, true));
     
         if (empty($smscru_settings) || empty($smscru_settings['login']) || empty($smscru_settings['password'])) {
             wp_send_json_error("Настройки SMSC.ru не найдены или неполные.");
-            return;
-        }
-    
-        if (!class_exists('BWFAN_SMSCRU_Send_Sms')) {
-            wp_send_json_error("Класс BWFAN_SMSCRU_Send_Sms не найден.");
-            return;
         }
     
         $smscru_sender = BWFAN_SMSCRU_Send_Sms::get_instance();
@@ -118,11 +109,7 @@ class BWFAN_SMSCRU_Test_Integration {
         } else {
             wp_send_json_error("Ошибка при отправке тестового SMS. Проверьте логи для получения дополнительной информации.");
         }
-    
-        // Убедимся, что скрипт завершается здесь
-        wp_die();
     }
-}
 
 /**
  * Инициализация класса при загрузке плагинов

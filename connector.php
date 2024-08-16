@@ -24,7 +24,7 @@ class BWFCO_SMSCRU extends BWF_CO {
             'login',
             'password',
         );
-
+        $this->actions['wfco_smscru_send_sms'] = 'WFCO_SMSCRU_Send_Sms';
         add_filter('wfco_connectors_loaded', array($this, 'add_card'));
     }
 
@@ -141,3 +141,4 @@ class BWFCO_SMSCRU extends BWF_CO {
 }
 
 WFCO_Load_Connectors::register('BWFCO_SMSCRU');
+$wfco_actions['wfco_smscru_send_sms'] = 'WFCO_SMSCRU_Send_Sms';
