@@ -39,6 +39,7 @@ final class WFCO_SMSCRU {
     // Определение констант
     public function define_plugin_properties() {
         define( 'WFCO_SMSCRU_VERSION', '2.0.8' );
+        define( 'WFCO_SMSCRU_VERSION', '1.0.5' );
         define( 'WFCO_SMSCRU_FULL_NAME', 'Autonami Marketing Automations Connectors : SMSC.ru' );
         define( 'WFCO_SMSCRU_PLUGIN_FILE', __FILE__ );
         define( 'WFCO_SMSCRU_PLUGIN_DIR', __DIR__ );
@@ -85,7 +86,34 @@ final class WFCO_SMSCRU {
         require_once( WFCO_SMSCRU_PLUGIN_DIR . '/includes/class-wfco-smscru-call.php' );
         require_once( WFCO_SMSCRU_PLUGIN_DIR . '/connector.php' );
 
+        // Регистрируем коннектор
+        WFCO_Load_Connectors::register('WFCO_SMSCRU');
+
+        // Загружаем и регистрируем вызовы
+        $this->load_and_register_calls();
+
         do_action( 'wfco_smscru_connector_loaded', $this );
+    }
+
+    /**
+     * Loads and registers the calls for the SMSCRU connector.
+     *
+     * This function iterates over an array of call files and classes, 
+     * includes the files, instantiates the classes, and registers the calls.
+     *
+     * @return void
+     */
+    private function load_and_register_calls() {
+        $calls = array(
+            'class-wfco-smscru-send-sms.php' => 'WFCO_SMSCRU_Send_Sms',
+            'class-wfco-smscru-get-balance.php' => 'WFCO_SMSCRU_Get_Balance'
+        );
+
+        foreach ($calls as $file => $class) {
+            require_once(WFCO_SMSCRU_PLUGIN_DIR . '/calls/' . $file);
+            $call_instance = call_user_func(array($class, 'get_instance'));
+            WFCO_Load_Connectors::register_calls($call_instance);
+        }
     }
 
     // Загрузка классов интеграции Autonami

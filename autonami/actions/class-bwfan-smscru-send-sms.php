@@ -448,15 +448,12 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
             ],
         ];
     }
-    
-    /**
-     * Adds filters to change the newline separator in billing and shipping addresses.
-     *
-     * This method is called by the parent class's constructor.
-     */
-    private function add_action() {
-        add_filter( 'bwfan_order_billing_address_separator', array( $this, 'change_br_to_slash_n' ) );
-        add_filter( 'bwfan_order_shipping_address_separator', array( $this, 'change_br_to_slash_n' ) );
+
+
+
+    // Добавленный метод add_action
+    public function add_action() {
+        $this->progress = true;
     }
       
     /**
