@@ -5,7 +5,7 @@
  * и возвращает текущий баланс.
  */
 class WFCO_SMSCRU_Get_Balance extends WFCO_Call {
-    private static $ins = null;
+    private static $instance = null;
     private $api_endpoint = 'https://smsc.ru/sys/balance.php';
 
     /**
@@ -14,7 +14,10 @@ class WFCO_SMSCRU_Get_Balance extends WFCO_Call {
      * @return void
      */
     public function __construct() {
+        $this->id = 'wfco_smscru_send_sms';
+        $this->group = __('SMSC.ru', 'wp-marketing-automations-connector-smscru');
         $this->required_fields = array('login', 'password');
+        parent::__construct();
     }
 
     /**
@@ -23,10 +26,10 @@ class WFCO_SMSCRU_Get_Balance extends WFCO_Call {
      * @return WFCO_SMSCRU_Get_Balance|null
      */
     public static function get_instance() {
-        if (null === self::$ins) {
-            self::$ins = new self();
+        if (null === self::$instance) {
+            self::$instance = new self();
         }
-        return self::$ins;
+        return self::$instance;
     }
 
     /**
@@ -71,6 +74,14 @@ class WFCO_SMSCRU_Get_Balance extends WFCO_Call {
             'message' => 'Balance retrieved successfully',
             'data' => $result,
         );
+    }
+
+    public function get_slug() {
+        return $this->id;
+    }
+
+    public function get_connector_slug() {
+        return 'wfco_smscru';
     }
 }
 
