@@ -162,31 +162,38 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
             error_log("Missing login or password for SMSC.ru");
             return false;
         }
-
-        $load_connector = WFCO_Load_Connectors::get_instance();
-        error_log("Connector instance: " . print_r($load_connector, true));
-        error_log("Available calls: " . print_r($load_connector->get_calls(), true));
+    
+        $url = 'https://smsc.ru/sys/send.php';
         
-        $call_class = $load_connector->get_call('wfco_smscru_send_sms');
-        
-        if (is_null($call_class)) {
-            error_log("Send SMS call not found for test");
+        $params = array(
+            'login'  => $this->data['login'],
+            'psw'    => $this->data['password'],
+            'phones' => $phone,
+            'mes'    => $message,
+            'charset' => 'utf-8',
+            'fmt'    => 3  // Формат ответа JSON
+        );
+    
+        $url = add_query_arg($params, $url);
+    
+        $response = wp_remote_get($url);
+    
+        if (is_wp_error($response)) {
+            error_log("SMSC.ru API error: " . $response->get_error_message());
             return false;
         }
     
-        $call_data = array(
-            'login'    => $this->data['login'],
-            'password' => $this->data['password'],
-            'phones'   => $phone,
-            'mes'      => $message,
-        );
+        $body = wp_remote_retrieve_body($response);
+        $result = json_decode($body, true);
     
-        $call_class->set_data($call_data);
-        $response = $call_class->process();
+        error_log("SMSC.ru API response: " . print_r($result, true));
     
-        error_log("Test SMS send attempt completed. Response: " . print_r($response, true));
+        if (isset($result['error'])) {
+            error_log("SMSC.ru API error: " . $result['error']);
+            return false;
+        }
     
-        return isset($response['status']) && $response['status'] === true;
+        return true;
     }
 
 

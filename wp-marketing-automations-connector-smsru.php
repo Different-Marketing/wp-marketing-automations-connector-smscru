@@ -4,7 +4,7 @@
  * Plugin Name: Autonami Marketing Automations Connectors - SMSC.ru
  * Plugin URI: https://my.mamatov.club
  * Description: Now create SMSC.ru based automations with Autonami Marketing Automations for WordPress
- * Version: 1.0.6
+ * Version: 1.0.9
  * Author: Evgenii Rezanov, Claude Ai
  * Author URI: https://evgrezanov.github.io
  * License: GPLv3 or later
@@ -26,19 +26,14 @@ final class WFCO_SMSCRU {
     public static $_instance = null;
 
     private function __construct() {
-        // Загрузка важных переменных и констант
         $this->define_plugin_properties();
-
-        // Загрузка общих файлов
-        $this->load_commons();
-
-        // Загрузка файла для тестовой интеграции
-        $this->load_test_integration();
+        add_action('wfco_load_connectors', array($this, 'load_connector'));
+        add_action('plugins_loaded', array($this, 'load_test_integration'));
     }
 
     // Определение констант
     public function define_plugin_properties() {
-        define( 'WFCO_SMSCRU_VERSION', '1.0.6' );
+        define( 'WFCO_SMSCRU_VERSION', '1.0.9' );
         define( 'WFCO_SMSCRU_FULL_NAME', 'Autonami Marketing Automations Connectors : SMSC.ru' );
         define( 'WFCO_SMSCRU_PLUGIN_FILE', __FILE__ );
         define( 'WFCO_SMSCRU_PLUGIN_DIR', __DIR__ );
@@ -56,7 +51,8 @@ final class WFCO_SMSCRU {
 
     // Загрузка файла для тестовой интеграции
     public function load_test_integration() {
-        require_once plugin_dir_path(__FILE__) . 'class-bwfan-smscru-test-integration.php';
+        require_once WFCO_SMSCRU_PLUGIN_DIR . '/class-bwfan-smscru-test-integration.php';
+        BWFAN_SMSCRU_Test_Integration::get_instance();
     }
 
     public static function get_instance() {
@@ -99,14 +95,29 @@ final class WFCO_SMSCRU {
             'class-wfco-smscru-send-sms.php' => 'WFCO_SMSCRU_Send_Sms',
             'class-wfco-smscru-get-balance.php' => 'WFCO_SMSCRU_Get_Balance'
         );
-
+    
         foreach ($calls as $file => $class) {
-            require_once(WFCO_SMSCRU_PLUGIN_DIR . '/calls/' . $file);
-            if (method_exists($class, 'get_instance')) {
-                $call_instance = call_user_func(array($class, 'get_instance'));
-                WFCO_Load_Connectors::register_calls($call_instance);
+            $file_path = WFCO_SMSCRU_PLUGIN_DIR . '/calls/' . $file;
+            error_log("Attempting to load file: " . $file_path);
+            
+            if (file_exists($file_path)) {
+                require_once($file_path);
+                error_log("File loaded: " . $file_path);
+                
+                if (class_exists($class)) {
+                    error_log("Class $class exists");
+                    if (method_exists($class, 'get_instance')) {
+                        $call_instance = call_user_func(array($class, 'get_instance'));
+                        WFCO_Load_Connectors::register_calls($call_instance);
+                        error_log("Registered call for class: " . $class);
+                    } else {
+                        error_log("Error: Class $class does not have get_instance method");
+                    }
+                } else {
+                    error_log("Error: Class $class does not exist after loading file");
+                }
             } else {
-                error_log("Error: Class $class does not have get_instance method");
+                error_log("Error: File not found: " . $file_path);
             }
         }
     }
@@ -119,12 +130,21 @@ final class WFCO_SMSCRU {
         }
         do_action( 'wfco_smscru_integrations_loaded', $this );
     }
-}
 
-if ( ! function_exists( 'WFCO_SMSCRU_Core' ) ) {
-    function WFCO_SMSCRU_Core() {
-        return WFCO_SMSCRU::get_instance();
+    public function load_connector() {
+        require_once WFCO_SMSCRU_PLUGIN_DIR . '/includes/class-wfco-smscru-connector.php';
+    }
+
+    public function load_calls() {
+        require_once WFCO_SMSCRU_PLUGIN_DIR . '/calls/class-wfco-smscru-send-sms.php';
+        require_once WFCO_SMSCRU_PLUGIN_DIR . '/calls/class-wfco-smscru-get-balance.php';
+    
+        WFCO_Load_Connectors::register_calls(WFCO_SMSCRU_Send_Sms::get_instance());
+        WFCO_Load_Connectors::register_calls(WFCO_SMSCRU_Get_Balance::get_instance());
     }
 }
 
-WFCO_SMSCRU_Core();
+WFCO_SMSCRU::get_instance();
+add_action('plugins_loaded', function() {
+    WFCO_Load_Connectors::register('WFCO_SMSCRU');
+});

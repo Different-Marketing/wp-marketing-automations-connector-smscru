@@ -9,17 +9,22 @@ class BWFAN_SMSCRU_Test_Integration {
      * @return BWFAN_SMSCRU_Test_Integration
      */
     public static function get_instance() {
-        if (null === self::$instance) {
-            self::$instance = new self();
+        // Используем статическое свойство для хранения экземпляра
+        static $instance = null;
+        
+        if (null === $instance) {
+            // Создаем новый экземпляр класса
+            $instance = new self();
         }
-        return self::$instance;
+        
+        return $instance;
     }
 
     /**
      * Конструктор класса
      * Инициализирует хуки для добавления меню и обработки AJAX-запросов
      */
-    private function __construct() {
+    public function __construct() {
         add_action('admin_menu', array($this, 'add_test_menu'));
         add_action('wp_ajax_smscru_send_test_sms', array($this, 'ajax_send_test_sms'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_scripts'));
@@ -93,7 +98,7 @@ class BWFAN_SMSCRU_Test_Integration {
         }
     
         $smscru_settings = WFCO_Common::get_single_connector_data('bwfco_smscru');
-        error_log('SMSC.ru settings loaded: ' . print_r($smscru_settings, true));
+        error_log('SMSC.ru settings: ' . print_r($smscru_settings, true));
     
         if (empty($smscru_settings) || empty($smscru_settings['login']) || empty($smscru_settings['password'])) {
             wp_send_json_error("Настройки SMSC.ru не найдены или неполные.");
@@ -113,4 +118,4 @@ class BWFAN_SMSCRU_Test_Integration {
 
 }
 
-add_action('plugins_loaded', array('BWFAN_SMSCRU_Test_Integration', 'get_instance'));
+//add_action('plugins_loaded', array('BWFAN_SMSCRU_Test_Integration', 'get_instance'));
