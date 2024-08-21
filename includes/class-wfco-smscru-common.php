@@ -1,12 +1,7 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) {
-    exit; // Exit if accessed directly
-}
-
 class WFCO_SMSCRU_Common {
-
-    public static $headers = null;
+    private static $instance = null;
 
     /**
      * Set the headers array with the Authorization and Content-Type headers.
@@ -64,3 +59,5 @@ class WFCO_SMSCRU_Common {
         return $error_message ? $error_message : __('Unknown error occurred', 'autonami-automations-connectors');
     }
 }
+
+WFCO_SMSCRU_Common::get_instance();

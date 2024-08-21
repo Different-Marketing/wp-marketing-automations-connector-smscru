@@ -1,7 +1,6 @@
 <?php
 
 class BWFCO_SMSCRU extends BWF_CO {
-
     public static $instance = null;
     public $v2 = true;
 
@@ -11,69 +10,53 @@ class BWFCO_SMSCRU extends BWF_CO {
      * @since 2.0.0
      */
     public function __construct() {
+        $this->keys_to_track = [
+            'login',
+            'password'
+        ];
+        $this->form_req_keys = [
+            'login',
+            'password'
+        ];
+
         $this->connector_url     = WFCO_SMSCRU_PLUGIN_URL;
         $this->dir               = __DIR__;
-        $this->nice_name         = __('SMSC.ru', 'autonami-automations-connectors');
+        $this->nice_name         = __( 'SMSC.ru', 'autonami-automations-connectors' );
         $this->autonami_int_slug = 'BWFAN_SMSCRU_Integration';
 
-        $this->keys_to_track = array(
-            'login',
-            'password',
-        );
-        $this->form_req_keys = array(
-            'login',
-            'password',
-        );
-        $this->actions['wfco_smscru_send_sms'] = 'WFCO_SMSCRU_Send_Sms';
-        add_filter('wfco_connectors_loaded', array($this, 'add_card'));
+        add_filter( 'wfco_connectors_loaded', array( $this, 'add_card' ) );
     }
 
-    /**
-     * Returns an instance of the class.
-     *
-     * @return BWFCO_SMSCRU
-     */
     public static function get_instance() {
-        if (null === self::$instance) {
+        if ( null === self::$instance ) {
             self::$instance = new self();
         }
         return self::$instance;
     }
 
-    /**
-     * Returns an array of field schema for the SMSC.ru connector.
-     *
-     * The schema includes fields for login and password, each with their respective
-     * labels, types, classes, and placeholders. Both fields are required.
-     *
-     * @return array An array of field schema.
-     */
     public function get_fields_schema() {
         return array(
             array(
                 'id'          => 'login',
-                'label'       => __('Login', 'autonami-automations-connectors'),
+                'label'       => __( 'Login', 'wp-marketing-automations-connectors' ),
                 'type'        => 'text',
                 'class'       => 'bwfan_smscru_login',
-                'placeholder' => __('Enter your SMSC.ru login', 'autonami-automations-connectors'),
+                'placeholder' => __( 'Login', 'wp-marketing-automations-connectors' ),
                 'required'    => true,
+                'toggler'     => array(),
             ),
             array(
                 'id'          => 'password',
-                'label'       => __('Password', 'autonami-automations-connectors'),
+                'label'       => __( 'Password', 'wp-marketing-automations-connectors' ),
                 'type'        => 'password',
                 'class'       => 'bwfan_smscru_password',
-                'placeholder' => __('Enter your SMSC.ru password', 'autonami-automations-connectors'),
+                'placeholder' => __( 'Password', 'wp-marketing-automations-connectors' ),
                 'required'    => true,
+                'toggler'     => array(),
             ),
         );
     }
 
-    /**
-     * Retrieves the saved settings fields values for the current connector.
-     *
-     * @return array An array containing the saved settings fields values.
-     */
     public function get_settings_fields_values() {
         $saved_data = WFCO_Common::$connectors_saved_data;
         $old_data   = isset($saved_data[$this->get_slug()]) ? $saved_data[$this->get_slug()] : array();
@@ -129,16 +112,14 @@ class BWFCO_SMSCRU extends BWF_CO {
     public function add_card($available_connectors) {
         $available_connectors['autonami']['connectors']['bwfco_smscru'] = array(
             'name'            => 'SMSC.ru',
-            'desc'            => __('Send SMS via SMSC.ru', 'autonami-automations-connectors'),
+            'desc'            => __( 'Send SMS', 'autonami-automations-connectors' ),
             'connector_class' => 'BWFCO_SMSCRU',
             'image'           => $this->get_image(),
             'source'          => '',
             'file'            => '',
         );
-
         return $available_connectors;
     }
 }
 
-WFCO_Load_Connectors::register('BWFCO_SMSCRU');
-$wfco_actions['wfco_smscru_send_sms'] = 'WFCO_SMSCRU_Send_Sms';
+WFCO_Load_Connectors::register( 'BWFCO_SMSCRU' );
