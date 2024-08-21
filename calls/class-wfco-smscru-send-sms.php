@@ -19,7 +19,7 @@ class WFCO_SMSCRU_Send_Sms extends WFCO_Call {
     public function __construct() {
         $this->id = 'wfco_smscru_send_sms';
         $this->group = __('SMSC.ru', 'wp-marketing-automations-connector-smscru');
-        parent::__construct();
+        $this->required_fields = array('login', 'password', 'phones', 'mes');
     }
 
     /**
@@ -118,14 +118,4 @@ class WFCO_SMSCRU_Send_Sms extends WFCO_Call {
             return array('status' => false, 'message' => 'Failed to send SMS: ' . $body);
         }
     }
-
-    public function get_slug() {
-        return $this->id;
-    }
-    
-    public function get_connector_slug() {
-        return 'wfco_smscru';
-    }
 }
-
-return 'WFCO_SMSCRU_Send_Sms';

@@ -34,6 +34,15 @@ class BWFCO_SMSCRU extends BWF_CO {
         return self::$instance;
     }
 
+    public function load_calls() {
+        require_once WFCO_SMSCRU_PLUGIN_DIR . '/includes/class-wfco-smscru-call.php';
+        require_once WFCO_SMSCRU_PLUGIN_DIR . '/calls/class-wfco-smscru-send-sms.php';
+        require_once WFCO_SMSCRU_PLUGIN_DIR . '/calls/class-wfco-smscru-get-balance.php';
+    
+        WFCO_Load_Connectors::register_calls(WFCO_SMSCRU_Send_Sms::get_instance());
+        WFCO_Load_Connectors::register_calls(WFCO_SMSCRU_Get_Balance::get_instance());
+    }
+
     public function get_fields_schema() {
         return array(
             array(

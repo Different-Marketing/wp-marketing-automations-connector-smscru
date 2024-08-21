@@ -1,5 +1,9 @@
 <?php
 
+if (!class_exists('WFCO_Call')) {
+    require_once WP_PLUGIN_DIR . '/wp-marketing-automations/woofunnels/connector/class-wfco-call.php';
+}
+
 if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly
 }

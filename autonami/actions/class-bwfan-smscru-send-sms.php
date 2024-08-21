@@ -1,5 +1,6 @@
 <?php
 //https://smsc.ru/api/#menu
+
 class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
     private static $instance = null;
     private $progress = false;
@@ -352,101 +353,48 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
                 "description" => '',
                 "required"    => true,
             ],
-            [
-                'id'            => 'promotional_sms',
-                'checkboxlabel' => __( "Mark as Promotional", 'autonami-automations-connectors' ),
-                'type'          => 'checkbox',
-                "class"         => '',
-                'hint'          => __( 'SMS marked as promotional will not be send to the unsubscribers.', 'autonami-automations-connectors' ),
-                'description'   => '',
-                "required"      => false,
-            ],
-            [
-                'id'            => 'sms_append_utm',
-                'checkboxlabel' => __( " Add UTM parameters to the links", 'autonami-automations-connectors' ),
-                'type'          => 'checkbox',
-                "class"         => '',
-                'hint'          => __( 'Add UTM parameters in all the links present in the sms.', 'autonami-automations-connectors' ),
-                'description'   => '',
-                "required"      => false,
-            ],
-            [
-                'id'          => 'sms_utm_source',
-                'label'       => __( "UTM Source", 'autonami-automations-connectors' ),
-                'type'        => 'text',
-                'placeholder' => "",
-                "class"       => 'bwfan-input-wrapper',
-                'tip'         => '',
-                "description" => __( '', 'autonami-automations-connectors' ),
-                "required"    => false,
-                'toggler'     => array(
-                    'fields'   => array(
-                        array(
-                            'id'    => 'sms_append_utm',
-                            'value' => true,
-                        ),
-                    ),
-                    'relation' => 'AND',
-                ),
-            ],
-            [
-                'id'          => 'sms_utm_medium',
-                'label'       => __( "UTM Medium", 'autonami-automations-connectors' ),
-                'type'        => 'text',
-                'placeholder' => "",
-                "class"       => 'bwfan-input-wrapper',
-                'tip'         => '',
-                "description" => __( '', 'autonami-automations-connectors' ),
-                "required"    => false,
-                'toggler'     => array(
-                    'fields'   => array(
-                        array(
-                            'id'    => 'sms_append_utm',
-                            'value' => true,
-                        ),
-                    ),
-                    'relation' => 'AND',
-                ),
-            ],
-            [
-                'id'          => 'sms_utm_campaign',
-                'label'       => __( "UTM Campaign", 'autonami-automations-connectors' ),
-                'type'        => 'text',
-                'placeholder' => "",
-                "class"       => 'bwfan-input-wrapper',
-                'tip'         => '',
-                "description" => __( '', 'autonami-automations-connectors' ),
-                "required"    => false,
-                'toggler'     => array(
-                    'fields'   => array(
-                        array(
-                            'id'    => 'sms_append_utm',
-                            'value' => true,
-                        ),
-                    ),
-                    'relation' => 'AND',
-                ),
-            ],
-            [
-                'id'          => 'sms_utm_term',
-                'label'       => __( "UTM Term", 'autonami-automations-connectors' ),
-                'type'        => 'text',
-                'placeholder' => "",
-                "class"       => 'bwfan-input-wrapper',
-                'tip'         => '',
-                "description" => __( '', 'autonami-automations-connectors' ),
-                "required"    => false,
-                'toggler'     => array(
-                    'fields'   => array(
-                        array(
-                            'id'    => 'sms_append_utm',
-                            'value' => true,
-                        ),
-                    ),
-                    'relation' => 'AND',
-                ),
-            ],
         ];
+    }
+
+    public function send_test_sms($phone, $message) {
+        error_log("Sending test SMS to: $phone");
+        
+        if (empty($this->data['login']) || empty($this->data['password'])) {
+            error_log("Missing login or password for SMSC.ru");
+            return false;
+        }
+    
+        $url = 'https://smsc.ru/sys/send.php';
+        
+        $params = array(
+            'login'  => $this->data['login'],
+            'psw'    => $this->data['password'],
+            'phones' => $phone,
+            'mes'    => $message,
+            'charset' => 'utf-8',
+            'fmt'    => 3  // Формат ответа JSON
+        );
+    
+        $url = add_query_arg($params, $url);
+    
+        $response = wp_remote_get($url);
+    
+        if (is_wp_error($response)) {
+            error_log("SMSC.ru API error: " . $response->get_error_message());
+            return false;
+        }
+    
+        $body = wp_remote_retrieve_body($response);
+        $result = json_decode($body, true);
+    
+        error_log("SMSC.ru API response: " . print_r($result, true));
+    
+        if (isset($result['error'])) {
+            error_log("SMSC.ru API error: " . $result['error']);
+            return false;
+        }
+    
+        return true;
     }
 
 

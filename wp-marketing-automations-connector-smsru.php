@@ -28,8 +28,6 @@ final class WFCO_SMSCRU {
 
     public function define_plugin_properties() {
         define( 'WFCO_SMSCRU_VERSION', '2.0.8' );
-        define( 'WFCO_SMSCRU_VERSION', '1.0.5' );
-        define( 'WFCO_SMSCRU_VERSION', '1.0.6' );
         define( 'WFCO_SMSCRU_FULL_NAME', 'Autonami Marketing Automations Connectors : SMSC.ru' );
         define( 'WFCO_SMSCRU_PLUGIN_FILE', __FILE__ );
         define( 'WFCO_SMSCRU_PLUGIN_DIR', __DIR__ );
@@ -65,31 +63,28 @@ final class WFCO_SMSCRU {
      * @since 2.0.0
      */
     public function init_smscru() {
-        require WFCO_SMSCRU_PLUGIN_DIR . '/includes/class-wfco-smscru-common.php';
-        require WFCO_SMSCRU_PLUGIN_DIR . '/includes/class-wfco-smscru-call.php';
+        require_once WFCO_SMSCRU_PLUGIN_DIR . '/includes/class-wfco-smscru-call.php';
     }
 
     public function load_connector_classes() {
-        require_once( WFCO_SMSCRU_PLUGIN_DIR . '/includes/class-wfco-smscru-common.php' );
-        require_once( WFCO_SMSCRU_PLUGIN_DIR . '/includes/class-wfco-smscru-call.php' );
         require_once( WFCO_SMSCRU_PLUGIN_DIR . '/connector.php' );
-
         do_action( 'wfco_smscru_connector_loaded', $this );
     }
 
     public function load_autonami_classes() {
-        $integration_dir = WFCO_SMSCRU_PLUGIN_DIR . '/autonami';
-        foreach ( glob( $integration_dir . '/class-*.php' ) as $_field_filename ) {
-            require_once( $_field_filename );
-        }
+        require_once( WFCO_SMSCRU_PLUGIN_DIR . '/autonami/class-bwfan-smscru-integrations.php' );
+        require_once( WFCO_SMSCRU_PLUGIN_DIR . '/autonami/actions/class-bwfan-smscru-send-sms.php' );
         do_action( 'wfco_smscru_integrations_loaded', $this );
+    }
+
+    public function init_test_integration() {
+        require_once( WFCO_SMSCRU_PLUGIN_DIR . '/class-bwfan-smscru-test-integration.php' );
+        BWFAN_SMSCRU_Test_Integration::get_instance();
     }
 }
 
-if ( ! function_exists( 'WFCO_SMSCRU_Core' ) ) {
-    function WFCO_SMSCRU_Core() {
-        return WFCO_SMSCRU::get_instance();
-    }
+function WFCO_SMSCRU_Core() {
+    return WFCO_SMSCRU::get_instance();
 }
 
 WFCO_SMSCRU_Core();
