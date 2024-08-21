@@ -1,18 +1,16 @@
 <?php
 
-/**
- * Этот класс отвечает за отправку SMS через API SMSC.ru. 
- * Он принимает необходимые параметры 
- * (логин, пароль, номера телефонов, текст сообщения) и отправляет запрос к API. 
- * Затем он обрабатывает ответ и возвращает результат.
- */
-class WFCO_SMSCRU_Send_Sms extends WFCO_Call {
+if (!class_exists('WFCO_SMSCRU_Call')) {
+    require_once WFCO_SMSCRU_PLUGIN_DIR . '/includes/class-wfco-smscru-call.php';
+}
+
+class WFCO_SMSCRU_Send_Sms extends WFCO_SMSCRU_Call {
     private static $instance = null;
 
-    public function __construct() {
+    protected function __construct() {
         $this->id = 'wfco_smscru_send_sms';
         $this->group = __('SMSC.ru', 'wp-marketing-automations-connector-smscru');
-        parent::__construct();
+        $this->required_fields = array('login', 'password', 'phones', 'mes');
     }
 
     public static function get_instance() {
@@ -22,19 +20,11 @@ class WFCO_SMSCRU_Send_Sms extends WFCO_Call {
         return self::$instance;
     }
 
-    public function get_data() {
-        return $this->request_data;
-    }
-
-    public function set_data( $data ) {
-        $this->request_data = $data;
-    }
-
     public function process() {
-        $login = $this->request_data['login'];
-        $password = $this->request_data['password'];
-        $phones = $this->request_data['phones'];
-        $message = $this->request_data['mes'];
+        $login = $this->data['login'];
+        $password = $this->data['password'];
+        $phones = $this->data['phones'];
+        $message = $this->data['mes'];
 
         $url = "https://smsc.ru/sys/send.php?login=".urlencode($login)."&psw=".urlencode($password)."&phones=".urlencode($phones)."&mes=".urlencode($message)."&charset=utf-8";
         $response = wp_remote_get($url);
@@ -53,14 +43,4 @@ class WFCO_SMSCRU_Send_Sms extends WFCO_Call {
             return array('status' => false, 'message' => 'Failed to send SMS: ' . $body);
         }
     }
-
-    public function get_slug() {
-        return $this->id;
-    }
-    
-    public function get_connector_slug() {
-        return 'wfco_smscru';
-    }
 }
-
-return 'WFCO_SMSCRU_Send_Sms';

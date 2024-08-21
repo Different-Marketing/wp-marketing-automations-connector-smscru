@@ -13,6 +13,7 @@ final class BWFAN_SMSCRU_Integration extends BWFAN_Integration {
         $this->priority   = 55;
 
         add_filter( 'bwfan_sms_services', array( $this, 'add_as_sms_service' ), 10, 1 );
+        add_filter( 'bwfan_available_actions', array( $this, 'register_actions' ) );
     }
 
     public static function get_instance() {
@@ -33,6 +34,11 @@ final class BWFAN_SMSCRU_Integration extends BWFAN_Integration {
             $sms_services[ $integration ] = $this->nice_name;
         }
         return $sms_services;
+    }
+
+    public function register_actions( $actions ) {
+        $actions['smscru_send_sms'] = 'BWFAN_SMSCRU_Send_Sms';
+        return $actions;
     }
 
     public function send_message( $args ) {
@@ -79,7 +85,7 @@ final class BWFAN_SMSCRU_Integration extends BWFAN_Integration {
     }
 
     public function validate_send_message_response( $response ) {
-        // Логика валидации ответа от API SMSC.ru
+        // Implement response validation logic here
     }
 }
 

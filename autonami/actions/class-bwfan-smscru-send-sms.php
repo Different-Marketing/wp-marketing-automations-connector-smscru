@@ -1,8 +1,5 @@
 <?php
 
-if ( ! class_exists( 'BWFAN_Action' ) ) {
-    require_once WP_PLUGIN_DIR . '/wp-marketing-automations/includes/abstracts/class-bwfan-action.php';
-}
 class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
     private static $instance = null;
     private $progress = false;
@@ -196,28 +193,33 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
         return true;
     }
 
-
-
-    // Добавленный метод add_action
     public function add_action() {
         $this->progress = true;
     }
 
-    // Добавленный метод remove_action
     public function remove_action() {
         $this->progress = false;
     }
 
-    // Вспомогательный метод для возврата ошибки
     public function error_response($message = '') {
         if (empty($message)) {
             $message = __('Unknown error occurred', 'wp-marketing-automations');
         }
     
         return array(
-            'status'  => self::$RESPONSE_FAILED,
+            'status'  => 4,
             'message' => $message,
         );
+    }
+
+    protected function unsubscribe_url_with_mode( $matches ) {
+        $string = $matches[0];
+        if ( strpos( $string, 'unsubscribe' ) !== false ) {
+            $string = add_query_arg( array(
+                'mode' => 2,
+            ), $string );
+        }
+        return $string;
     }
 }
 

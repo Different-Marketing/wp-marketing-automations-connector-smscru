@@ -1,23 +1,17 @@
 <?php
-/**
- * Этот класс отвечает за проверку баланса аккаунта SMSC.ru. 
- * Он принимает логин и пароль, отправляет запрос к API 
- * и возвращает текущий баланс.
- */
-class WFCO_SMSCRU_Get_Balance extends WFCO_Call {
+
+if (!class_exists('WFCO_SMSCRU_Call')) {
+    require_once WFCO_SMSCRU_PLUGIN_DIR . '/includes/class-wfco-smscru-call.php';
+}
+
+class WFCO_SMSCRU_Get_Balance extends WFCO_SMSCRU_Call {
     private static $instance = null;
     private $api_endpoint = 'https://smsc.ru/sys/balance.php';
 
-    /**
-     * Initializes a new instance of the WFCO_SMSCRU_Get_Balance class.
-     *
-     * @return void
-     */
-    public function __construct() {
-        $this->id = 'wfco_smscru_send_sms';
+    protected function __construct() {
+        $this->id = 'wfco_smscru_get_balance';
         $this->group = __('SMSC.ru', 'wp-marketing-automations-connector-smscru');
         $this->required_fields = array('login', 'password');
-        parent::__construct();
     }
 
     public static function get_instance() {
@@ -61,14 +55,4 @@ class WFCO_SMSCRU_Get_Balance extends WFCO_Call {
             'data' => $result,
         );
     }
-
-    public function get_slug() {
-        return $this->id;
-    }
-
-    public function get_connector_slug() {
-        return 'wfco_smscru';
-    }
 }
-
-return 'WFCO_SMSCRU_Get_Balance';
