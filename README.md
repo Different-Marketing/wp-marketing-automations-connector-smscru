@@ -82,3 +82,32 @@
 ## ➤ Благодарности
 
 Особая благодарность команде Autonami за создание отличной платформы для маркетинговых автоматизаций.
+wp-marketing-automations-connector-smscru/
+│
+├── autonami/
+│   ├── actions/
+│   │   └── class-bwfan-smscru-send-sms.php
+│   └── class-bwfan-smscru-integrations.php
+│
+├── calls/
+│   ├── class-wfco-smscru-get-balance.php
+│   └── class-wfco-smscru-send-sms.php
+│
+├── includes/
+│   ├── class-wfco-smscru-call.php
+│   ├── class-wfco-smscru-common.php
+│   └── class-wfco-smscru-connector.php
+│
+├── js/
+│   └── smscru-test.js
+│
+├── node_modules/
+│
+├── class-bwfan-smscru-test-integration.php
+├── connector.php
+├── index.php
+├── package-lock.json
+├── package.json
+├── README.md
+├── settings.php
+└── wp-marketing-automations-connector-smscru.php
