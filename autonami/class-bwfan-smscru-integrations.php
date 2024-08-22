@@ -5,7 +5,7 @@ final class BWFAN_SMSCRU_Integration extends BWFAN_Integration {
     protected $connector_slug = 'bwfco_smscru';
     protected $need_connector = true;
 
-    private function __construct() {
+    public function __construct() {
         $this->action_dir = __DIR__;
         $this->nice_name  = __( 'SMSC.ru', 'autonami-automations-connectors' );
         $this->group_name = __( 'Messaging', 'autonami-automations-connectors' );

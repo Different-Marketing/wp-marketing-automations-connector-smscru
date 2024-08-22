@@ -3,7 +3,7 @@
  * Plugin Name: Autonami Marketing Automations Connectors - SMSC.ru
  * Plugin URI: https://my.mamatov.club
  * Description: Now create SMSC.ru based automations with Autonami Marketing Automations for WordPress
- * Version: 1.1.8
+ * Version: 1.2.0
  * Author: Evgenii Rezanov, Claude Ai
  * Author URI: https://evgrezanov.github.io
  * License: GPLv3 or later
@@ -27,7 +27,7 @@ final class WFCO_SMSCRU {
     }
 
     public function define_plugin_properties() {
-        define( 'WFCO_SMSCRU_VERSION', '1.1.8' );
+        define( 'WFCO_SMSCRU_VERSION', '1.2.0' );
         define( 'WFCO_SMSCRU_FULL_NAME', 'Autonami Marketing Automations Connectors : SMSC.ru' );
         define( 'WFCO_SMSCRU_PLUGIN_FILE', __FILE__ );
         define( 'WFCO_SMSCRU_PLUGIN_DIR', __DIR__ );
@@ -37,10 +37,19 @@ final class WFCO_SMSCRU {
     }
 
     public function load_commons() {
-        add_action( 'wfco_load_connectors', [ $this, 'load_connector_classes' ] );
-        add_action( 'bwfan_automations_loaded', [ $this, 'load_autonami_classes' ] );
-        add_action( 'bwfan_loaded', [ $this, 'init_smscru' ] );
-        add_action( 'plugins_loaded', [ $this, 'init_test_integration' ] );
+        add_action('plugins_loaded', array($this, 'load_plugin_textdomain'));
+        add_action('wfco_load_connectors', array($this, 'load_connector_classes'));
+        add_action('bwfan_loaded', array($this, 'load_autonami_classes'));
+    }
+
+    public function load_plugin_textdomain() {
+        load_plugin_textdomain('wp-marketing-automations-connector-smscru', false, dirname(plugin_basename(__FILE__)) . '/languages/');
+    }
+
+    public function load_autonami_classes() {
+        require_once(WFCO_SMSCRU_PLUGIN_DIR . '/autonami/class-bwfan-smscru-integrations.php');
+        require_once(WFCO_SMSCRU_PLUGIN_DIR . '/autonami/actions/class-bwfan-smscru-send-sms.php');
+        do_action('wfco_smscru_integrations_loaded', $this);
     }
 
     public static function get_instance() {
@@ -55,14 +64,17 @@ final class WFCO_SMSCRU {
     }
 
     public function load_connector_classes() {
-        require_once( WFCO_SMSCRU_PLUGIN_DIR . '/connector.php' );
-        do_action( 'wfco_smscru_connector_loaded', $this );
+        require_once(WFCO_SMSCRU_PLUGIN_DIR . '/includes/class-wfco-smscru-call.php');
+        require_once(WFCO_SMSCRU_PLUGIN_DIR . '/calls/class-wfco-smscru-get-balance.php');
+        require_once(WFCO_SMSCRU_PLUGIN_DIR . '/calls/class-wfco-smscru-send-sms.php');
+        require_once(WFCO_SMSCRU_PLUGIN_DIR . '/connector.php');
+        WFCO_Load_Connectors::register('BWFCO_SMSCRU');
+        do_action('wfco_smscru_connector_loaded', $this);
     }
 
-    public function load_autonami_classes() {
-        require_once( WFCO_SMSCRU_PLUGIN_DIR . '/autonami/class-bwfan-smscru-integrations.php' );
-        require_once( WFCO_SMSCRU_PLUGIN_DIR . '/autonami/actions/class-bwfan-smscru-send-sms.php' );
-        do_action( 'wfco_smscru_integrations_loaded', $this );
+    public function register_smscru_action( $actions ) {
+        $actions['smscru_send_sms'] = 'BWFAN_SMSCRU_Send_Sms';
+        return $actions;
     }
 
     public function init_test_integration() {

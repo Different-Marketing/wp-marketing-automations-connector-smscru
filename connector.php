@@ -74,8 +74,34 @@ class BWFCO_SMSCRU extends BWF_CO {
         return $vals;
     }
 
-    protected function get_api_data( $posted_data ) {
-        // Implement API data retrieval logic here
+    public function get_api_data($posted_data) {
+        $login = isset($posted_data['login']) ? $posted_data['login'] : '';
+        $password = isset($posted_data['password']) ? $posted_data['password'] : '';
+    
+        if (empty($login) || empty($password)) {
+            return array(
+                'status' => 'error',
+                'message' => __('Login and password are required.', 'wp-marketing-automations-connector-smscru')
+            );
+        }
+    
+        // Проверка подключения к API SMSC.ru
+        $balance_call = WFCO_SMSCRU_Get_Balance::get_instance();
+        $balance_call->set_data($posted_data);
+        $result = $balance_call->process();
+    
+        if ($result['status']) {
+            return array(
+                'status' => 'success',
+                'message' => __('Successfully connected to SMSC.ru', 'wp-marketing-automations-connector-smscru'),
+                'data' => $result['data']
+            );
+        } else {
+            return array(
+                'status' => 'error',
+                'message' => $result['message']
+            );
+        }
     }
 
     public function add_card( $available_connectors ) {
