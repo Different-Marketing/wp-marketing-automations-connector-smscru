@@ -67,14 +67,17 @@ final class WFCO_SMSCRU {
     }
 
     public function load_connector_classes() {
-        require_once( WFCO_SMSCRU_PLUGIN_DIR . '/connector.php' );
-        do_action( 'wfco_smscru_connector_loaded', $this );
+        require_once(WFCO_SMSCRU_PLUGIN_DIR . '/includes/class-wfco-smscru-call.php');
+        require_once(WFCO_SMSCRU_PLUGIN_DIR . '/calls/class-wfco-smscru-get-balance.php');
+        require_once(WFCO_SMSCRU_PLUGIN_DIR . '/calls/class-wfco-smscru-send-sms.php');
+        require_once(WFCO_SMSCRU_PLUGIN_DIR . '/connector.php');
+        WFCO_Load_Connectors::register('BWFCO_SMSCRU');
+        do_action('wfco_smscru_connector_loaded', $this);
     }
 
-    public function load_autonami_classes() {
-        require_once( WFCO_SMSCRU_PLUGIN_DIR . '/autonami/class-bwfan-smscru-integrations.php' );
-        require_once( WFCO_SMSCRU_PLUGIN_DIR . '/autonami/actions/class-bwfan-smscru-send-sms.php' );
-        do_action( 'wfco_smscru_integrations_loaded', $this );
+    public function register_smscru_action( $actions ) {
+        $actions['smscru_send_sms'] = 'BWFAN_SMSCRU_Send_Sms';
+        return $actions;
     }
 
     public function init_test_integration() {

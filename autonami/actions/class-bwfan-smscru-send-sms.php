@@ -19,6 +19,7 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
         $this->action_desc = __( 'This action sends a message via SMSC.ru', 'autonami-automations-connectors' );
         $this->support_v2  = true;
         $this->support_v1  = false;
+        $this->integration_type = 'smscru';
     }
 
     /**
@@ -337,22 +338,19 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
                 'id'          => 'sms_to',
                 'label'       => __( "To", 'wp-marketing-automations' ),
                 'type'        => 'text',
-                'placeholder' => "",
+                'placeholder' => __( "Enter phone number", 'wp-marketing-automations' ),
                 "class"       => 'bwfan-input-wrapper',
-                'tip'         => __( '', 'autonami-automations-connectors' ),
-                "description" => '',
                 "required"    => true,
             ],
             [
                 'id'          => 'sms_body_textarea',
-                'label'       => __( "Text", 'wp-marketing-automations' ),
+                'label'       => __( "Message", 'wp-marketing-automations' ),
                 'type'        => 'textarea',
-                'placeholder' => "Message Body",
+                'placeholder' => __( "Enter your message", 'wp-marketing-automations' ),
                 "class"       => 'bwfan-input-wrapper',
-                'tip'         => __( '', 'autonami-automations-connectors' ),
-                "description" => '',
                 "required"    => true,
             ],
+            // Добавьте другие поля, если необходимо
         ];
     }
 

@@ -103,19 +103,17 @@ wp-marketing-automations-connector-smscru/
 │
 ├── includes/
 │   ├── class-wfco-smscru-call.php
-│   ├── class-wfco-smscru-common.php
-│   └── class-wfco-smscru-connector.php
 │
 ├── js/
 │   └── smscru-test.js
+|
+├── views/
+│   └── settings.php
 │
 ├── node_modules/
 │
 ├── class-bwfan-smscru-test-integration.php
 ├── connector.php
 ├── index.php
-├── package-lock.json
-├── package.json
 ├── README.md
-├── settings.php
 └── wp-marketing-automations-connector-smscru.php
