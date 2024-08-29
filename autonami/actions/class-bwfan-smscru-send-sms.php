@@ -19,7 +19,7 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
         $this->action_desc = __( 'This action sends a message via SMSC.ru', 'autonami-automations-connectors' );
         $this->support_v2  = true;
         $this->support_v1  = false;
-        $this->integration_type = 'smscru';
+        //$this->integration_type = 'smscru';
     }
 
     /**
@@ -115,6 +115,24 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
         $data_to_set['login']    = isset( $step_data['connector_data']['login'] ) ? $step_data['connector_data']['login'] : '';
         $data_to_set['password'] = isset( $step_data['connector_data']['password'] ) ? $step_data['connector_data']['password'] : '';
 
+        // Handle UTM parameters
+		$utm_params = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term'];
+		foreach ( $utm_params as $param ) {
+			if ( isset( $step_data["sms_$param"] ) && ! empty( $step_data["sms_$param"] ) ) {
+				$data_to_set[$param] = BWFAN_Common::decode_merge_tags( $step_data["sms_$param"] );
+			}
+		}
+
+        if ( isset( $automation_data['global'] ) && isset( $automation_data['global']['order_id'] ) ) {
+			$data_to_set['order_id'] = $automation_data['global']['order_id'];
+		} elseif ( isset( $automation_data['global'] ) && isset( $automation_data['global']['cart_abandoned_id'] ) ) {
+			$data_to_set['cart_abandoned_id'] = $automation_data['global']['cart_abandoned_id'];
+		}
+
+		if ( isset( $data_to_set['promotional_sms'] ) && 0 === absint( $data_to_set['promotional_sms'] ) ) {
+			$data_to_set['text'] = str_replace( '{{unsubscribe_link}}', '', $data_to_set['text'] );
+		}
+
         // UTM параметры и другие настройки
         if ( isset( $step_data['sms_utm_source'] ) && ! empty( $step_data['sms_utm_source'] ) ) {
 			$data_to_set['utm_source'] = BWFAN_Common::decode_merge_tags( $step_data['sms_utm_source'] );
@@ -167,6 +185,7 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
 		}
 
         $this->remove_action();
+
         return $data_to_set;
     }
 
@@ -340,20 +359,138 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
                 'type'        => 'text',
                 'placeholder' => __( "Enter phone number", 'wp-marketing-automations' ),
                 "class"       => 'bwfan-input-wrapper',
+                'tip'         => __( 'Enter the recipient\'s phone number with country code', 'autonami-automations-connectors' ),
+                "description" => '',
                 "required"    => true,
             ],
             [
-                'id'          => 'sms_body_textarea',
+                'id'          => 'sms_body',
                 'label'       => __( "Message", 'wp-marketing-automations' ),
                 'type'        => 'textarea',
                 'placeholder' => __( "Enter your message", 'wp-marketing-automations' ),
                 "class"       => 'bwfan-input-wrapper',
+                'tip'         => __( 'The content of your SMS message', 'autonami-automations-connectors' ),
+                "description" => '',
                 "required"    => true,
             ],
-            // Добавьте другие поля, если необходимо
+            [
+                'id'          => 'test_sms_to',
+                'label'       => __( "Send Test Message", 'wp-marketing-automations' ),
+                'type'        => 'text',
+                'placeholder' => __( "Enter test phone number", 'wp-marketing-automations' ),
+                "class"       => 'bwfan-input-wrapper',
+                'tip'         => __( 'Enter a phone number to send a test SMS', 'autonami-automations-connectors' ),
+                "description" => __( 'Enter Mobile no with country code', 'autonami-automations-connectors' ),
+                "required"    => false,
+            ],
+            [
+                'id'          => 'send_test_sms',
+                'type'        => 'send_data',
+                'label'       => __( 'Send Test', 'wp-marketing-automations' ),
+                'send_action' => 'bwf_test_sms',
+                'send_field'  => [
+                    'test_sms_to' => 'test_sms_to',
+                    'sms_body'    => 'sms_body',
+                ],
+                "hint"        => __( "Click to send a test SMS", 'wp-marketing-automations' )
+            ],
+            [
+                'id'            => 'promotional_sms',
+                'checkboxlabel' => __( "Mark as Promotional", 'wp-marketing-automations' ),
+                'type'          => 'checkbox',
+                "class"         => '',
+                'hint'          => __( 'SMS marked as promotional will not be sent to unsubscribers.', 'wp-marketing-automations' ),
+                'description'   => __( 'SMS marked as promotional will not be sent to unsubscribers.', 'autonami-automations-connectors' ),
+                "required"      => false,
+            ],
+            [
+                'id'            => 'sms_append_utm',
+                'checkboxlabel' => __( "Add UTM parameters to the links", 'wp-marketing-automations' ),
+                'type'          => 'checkbox',
+                "class"         => '',
+                'hint'          => __( 'Add UTM parameters to all links in the SMS.', 'wp-marketing-automations' ),
+                'description'   => __( 'Add UTM parameters to all links in the SMS.', 'autonami-automations-connectors' ),
+                "required"      => false,
+            ],
+            [
+                'id'          => 'sms_utm_source',
+                'label'       => __( "UTM Source", 'wp-marketing-automations' ),
+                'type'        => 'text',
+                'placeholder' => __( "Enter UTM source", 'wp-marketing-automations' ),
+                "class"       => 'bwfan-input-wrapper',
+                'tip'         => __( 'The UTM source to add to links', 'autonami-automations-connectors' ),
+                "description" => '',
+                "required"    => false,
+                'toggler'     => array(
+                    'fields'   => array(
+                        array(
+                            'id'    => 'sms_append_utm',
+                            'value' => true,
+                        ),
+                    ),
+                    'relation' => 'AND',
+                ),
+            ],
+            [
+                'id'          => 'sms_utm_medium',
+                'label'       => __( "UTM Medium", 'wp-marketing-automations' ),
+                'type'        => 'text',
+                'placeholder' => __( "Enter UTM medium", 'wp-marketing-automations' ),
+                "class"       => 'bwfan-input-wrapper',
+                'tip'         => __( 'The UTM medium to add to links', 'autonami-automations-connectors' ),
+                "description" => '',
+                "required"    => false,
+                'toggler'     => array(
+                    'fields'   => array(
+                        array(
+                            'id'    => 'sms_append_utm',
+                            'value' => true,
+                        ),
+                    ),
+                    'relation' => 'AND',
+                ),
+            ],
+            [
+                'id'          => 'sms_utm_campaign',
+                'label'       => __( "UTM Campaign", 'wp-marketing-automations' ),
+                'type'        => 'text',
+                'placeholder' => __( "Enter UTM campaign", 'wp-marketing-automations' ),
+                "class"       => 'bwfan-input-wrapper',
+                'tip'         => __( 'The UTM campaign to add to links', 'autonami-automations-connectors' ),
+                "description" => '',
+                "required"    => false,
+                'toggler'     => array(
+                    'fields'   => array(
+                        array(
+                            'id'    => 'sms_append_utm',
+                            'value' => true,
+                        ),
+                    ),
+                    'relation' => 'AND',
+                ),
+            ],
+            [
+                'id'          => 'sms_utm_term',
+                'label'       => __( "UTM Term", 'wp-marketing-automations' ),
+                'type'        => 'text',
+                'placeholder' => __( "Enter UTM term", 'wp-marketing-automations' ),
+                "class"       => 'bwfan-input-wrapper',
+                'tip'         => __( 'The UTM term to add to links', 'autonami-automations-connectors' ),
+                "description" => '',
+                "required"    => false,
+                'toggler'     => array(
+                    'fields'   => array(
+                        array(
+                            'id'    => 'sms_append_utm',
+                            'value' => true,
+                        ),
+                    ),
+                    'relation' => 'AND',
+                ),
+            ],
         ];
     }
-
+    // TODO: нужны функции
     public function send_test_sms($phone, $message) {
         error_log("Sending test SMS to: $phone");
         

@@ -19,7 +19,8 @@ final class BWFAN_SMSCRU_Integration extends BWFAN_Integration {
         $this->priority   = 55;
 
         add_filter( 'bwfan_sms_services', array( $this, 'add_as_sms_service' ), 10, 1 );
-        add_filter( 'bwfan_available_actions', array( $this, 'register_actions' ) );
+        // TODO: этот фильтр нужен?
+        //add_filter( 'bwfan_available_actions', array( $this, 'register_actions' ) );
     }
 
     /**
@@ -43,6 +44,11 @@ final class BWFAN_SMSCRU_Integration extends BWFAN_Integration {
      *
      * @return void
      */
+    /**
+     * Sets the connector slug for the given action object.
+     *
+     * @param BWFAN_Action $action_object The action object.
+     */
     protected function do_after_action_registration( BWFAN_Action $action_object ) {
         $action_object->connector = $this->connector_slug;
     }
@@ -58,13 +64,13 @@ final class BWFAN_SMSCRU_Integration extends BWFAN_Integration {
     public function add_as_sms_service( $sms_services ) {
         $slug = $this->get_connector_slug();
         if ( BWFAN_Core()->connectors->is_connected( $slug ) ) {
-            $integration                  = $slug;
-            $sms_services[ $integration ] = $this->nice_name;
+            $integration = $slug;
+            $sms_services[$integration] = $this->nice_name;
         }
         return $sms_services;
     }
 
-    public function register_actions( $actions ) {
+    /*public function register_actions( $actions ) {
         $actions['smscru_send_sms'] = 'BWFAN_SMSCRU_Send_Sms';
         return $actions;
     }
@@ -109,11 +115,11 @@ final class BWFAN_SMSCRU_Integration extends BWFAN_Integration {
             error_log('SMSC.ru: Missing login or password');
             return new WP_Error( 404, 'Invalid / Missing saved connector data' );
         }
-
-        if ( isset( $args['is_test'] ) && ! empty( $args['is_test'] ) ) {
+        // TODO: это нужно?
+        /*if ( isset( $args['is_test'] ) && ! empty( $args['is_test'] ) ) {
             $smscru_ins = BWFAN_SMSCRU_Send_Sms::get_instance();
             $smscru_ins->set_progress( true );
-        }
+        }*/
 
         $call_args = array(
             'login'    => $login,
@@ -133,6 +139,55 @@ final class BWFAN_SMSCRU_Integration extends BWFAN_Integration {
     }
 
     /**
+     * Validates the response from the SMSC.ru API after sending an SMS message.
+     *
+     * Checks if the response is an error from WordPress, decodes the JSON response,
+     * checks if the message was successfully sent, and returns the result accordingly.
+     *
+     * @param mixed $response The response from the SMSC.ru API after sending an SMS message.
+     *
+     * @return bool|WP_Error Returns true if the message was successfully sent, a WP_Error object if there was an error, or a general error if the response was neither.
+     */
+    /*public function validate_send_message_response( $response ) {
+        // Проверяем, является ли ответ ошибкой WordPress
+        if ( is_wp_error( $response ) ) {
+            return new WP_Error( 'smscru_api_error', $response->get_error_message() );
+        }
+    
+        // Проверяем код ответа HTTP
+        $response_code = wp_remote_retrieve_response_code( $response );
+        if ( $response_code !== 200 ) {
+            return new WP_Error( 'smscru_api_error', 'HTTP Error: ' . $response_code );
+        }
+    
+        // Получаем тело ответа
+        $body = wp_remote_retrieve_body( $response );
+    
+        // SMSC.ru может возвращать ответ в разных форматах, проверяем JSON
+        $result = json_decode( $body, true );
+        if ( json_last_error() === JSON_ERROR_NONE ) {
+            // Это JSON ответ
+            if ( isset( $result['error'] ) ) {
+                return new WP_Error( 'smscru_api_error', $result['error'] );
+            }
+            if ( isset( $result['id'] ) ) {
+                return true; // Успешная отправка
+            }
+        } else {
+            // Это может быть текстовый ответ
+            if ( strpos( $body, 'ERROR' ) !== false ) {
+                return new WP_Error( 'smscru_api_error', $body );
+            }
+            if ( strpos( $body, 'OK' ) !== false ) {
+                return true; // Успешная отправка
+            }
+        }
+    
+        // Если ни одно из условий не выполнено, возвращаем общую ошибку
+        return new WP_Error( 'smscru_unknown_error', 'Unknown error occurred while sending SMS' );
+    }*/
+
+    /**
      * Checks if the message was sent successfully or not.
      *
      * @param array $response The response from the API.
@@ -140,8 +195,20 @@ final class BWFAN_SMSCRU_Integration extends BWFAN_Integration {
      * @return bool|WP_Error Whether the message was sent or not.
      */
     public function validate_send_message_response( $response ) {
-        // Implement response validation logic here
+        if ( is_wp_error( $response ) ) {
+            return $response;
+        }
+
+        if ( is_array( $response ) && isset( $response['status'] ) && $response['status'] === true ) {
+            return true;
+        }
+
+        $message = isset( $response['message'] ) ? $response['message'] : __( 'SMS could not be sent.', 'autonami-automations-connectors' );
+        return new WP_Error( 500, $message );
     }
 }
 
+/**
+ * Register this class as an integration.
+ */
 BWFAN_Load_Integrations::register( 'BWFAN_SMSCRU_Integration' );
