@@ -22,22 +22,6 @@ class BWFCO_SMSCRU extends BWF_CO {
         add_filter( 'wfco_connectors_loaded', array( $this, 'add_card' ) );
     }
 
-    public static function get_instance() {
-        if ( null === self::$instance ) {
-            self::$instance = new self();
-        }
-        return self::$instance;
-    }
-
-    public function load_calls() {
-        require_once WFCO_SMSCRU_PLUGIN_DIR . '/includes/class-wfco-smscru-call.php';
-        require_once WFCO_SMSCRU_PLUGIN_DIR . '/calls/class-wfco-smscru-send-sms.php';
-        require_once WFCO_SMSCRU_PLUGIN_DIR . '/calls/class-wfco-smscru-get-balance.php';
-    
-        WFCO_Load_Connectors::register_calls(WFCO_SMSCRU_Send_Sms::get_instance());
-        WFCO_Load_Connectors::register_calls(WFCO_SMSCRU_Get_Balance::get_instance());
-    }
-
     public function get_fields_schema() {
         return array(
             array(
@@ -74,36 +58,67 @@ class BWFCO_SMSCRU extends BWF_CO {
         return $vals;
     }
 
-    public function get_api_data($posted_data) {
-        $login = isset($posted_data['login']) ? $posted_data['login'] : '';
-        $password = isset($posted_data['password']) ? $posted_data['password'] : '';
+    protected function get_api_data($posted_data) {
+        $resp_array = array(
+            'api_data' => $posted_data,
+            'status'   => 'failed',
+            'message'  => __('There was a problem authenticating your account. Please confirm your entered details.', 'autonami-automations-connectors'),
+        );
     
-        if (empty($login) || empty($password)) {
-            return array(
-                'status' => 'error',
-                'message' => __('Login and password are required.', 'wp-marketing-automations-connector-smscru')
-            );
+        if (empty($posted_data['login']) || empty($posted_data['password'])) {
+            $resp_array['message'] = __('Login and password are required.', 'autonami-automations-connectors');
+            return $resp_array;
         }
     
-        // Проверка подключения к API SMSC.ru
-        $balance_call = WFCO_SMSCRU_Get_Balance::get_instance();
-        $balance_call->set_data($posted_data);
-        $result = $balance_call->process();
+        $login = $posted_data['login'];
+        $password = $posted_data['password'];
     
-        if ($result['status']) {
-            return array(
-                'status' => 'success',
-                'message' => __('Successfully connected to SMSC.ru', 'wp-marketing-automations-connector-smscru'),
-                'data' => $result['data']
-            );
-        } else {
-            return array(
-                'status' => 'error',
-                'message' => $result['message']
-            );
+        // Проверка баланса для аутентификации
+        // https://smsc.ru/sys/balance.php?login=mamatov&psw=sdrijgwyg460u7&fmt=3
+        $balance_url = "https://smsc.ru/sys/balance.php?login=" . urlencode($login) . "&psw=" . urlencode($password) . "&fmt=3";
+        $response = wp_remote_get($balance_url);
+    
+        if (is_wp_error($response)) {
+            $resp_array['message'] = $response->get_error_message();
+            return $resp_array;
         }
+    
+        $body = wp_remote_retrieve_body($response);
+        $result = json_decode($body, true);
+    
+        if (isset($result['error'])) {
+            $resp_array['message'] = $result['error'];
+            return $resp_array;
+        }
+    
+        if (isset($result['balance'])) {
+            $resp_array['status'] = 'success';
+            $resp_array['message'] = sprintf(__('Successfully connected to SMSC.ru. Current balance: %s', 'autonami-automations-connectors'), $result['balance']);
+            $resp_array['api_data']['balance'] = $result['balance'];
+            $resp_array['api_data']['login'] = $login;
+            $resp_array['api_data']['password'] = $password;
+    
+            return $resp_array;
+        }
+    
+        $resp_array['message'] = __('Unknown error occurred while connecting to SMSC.ru', 'autonami-automations-connectors');
+        
+        return $resp_array;
     }
 
+    public static function get_instance() {
+        if ( null === self::$instance ) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
+    /**
+     * Adds the SMSC.ru connector to the available connectors array
+     *
+     * @param array $available_connectors The array of available connectors
+     * @return array The updated array of available connectors
+     */
     public function add_card( $available_connectors ) {
         $available_connectors['autonami']['connectors']['bwfco_smscru'] = array(
             'name'            => 'SMSC.ru',
@@ -114,6 +129,27 @@ class BWFCO_SMSCRU extends BWF_CO {
             'file'            => '',
         );
         return $available_connectors;
+    }
+
+    /**
+     * ? Добавьте этот метод
+     * Returns the settings for the SMSC.ru connector.
+     *
+     * This function reads the saved data for the connector from the common settings
+     * array and returns the settings for the current connector. If the settings
+     * are not found, an empty array is returned.
+     *
+     * @return array The settings for the SMSC.ru connector.
+     */
+    public function get_settings() {
+        $saved_data = WFCO_Common::$connectors_saved_data;
+        return isset($saved_data[$this->get_slug()]) ? $saved_data[$this->get_slug()] : array();
+    }
+
+    // ? Добавьте этот метод
+    public function is_connected() {
+        $settings = $this->get_settings();
+        return !empty($settings['login']) && !empty($settings['password']);
     }
 }
 
