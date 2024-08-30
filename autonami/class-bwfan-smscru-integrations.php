@@ -10,7 +10,7 @@ final class BWFAN_SMSCRU_Integration extends BWFAN_Integration {
         $this->nice_name  = __( 'SMSC.ru', 'autonami-automations-connectors' );
         $this->group_name = __( 'Messaging', 'autonami-automations-connectors' );
         $this->group_slug = 'messaging';
-        $this->priority   = 55;
+        $this->priority   = 35;
 
         add_filter( 'bwfan_sms_services', array( $this, 'add_as_sms_service' ), 10, 1 );
         // TODO: этот фильтр нужен?

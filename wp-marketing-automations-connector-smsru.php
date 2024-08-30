@@ -60,8 +60,8 @@ final class WFCO_SMSCRU {
     }
 
     public function init_smscru() {
-		require WFCO_SMSNIAGA_PLUGIN_DIR . '/includes/class-wfco-smscru-common.php';
-		require WFCO_SMSNIAGA_PLUGIN_DIR . '/includes/class-wfco-smscru-call.php';
+		require WFCO_SMSCRU_PLUGIN_DIR . '/includes/class-wfco-smscru-common.php';
+		require WFCO_SMSCRU_PLUGIN_DIR . '/includes/class-wfco-smscru-call.php';
 	}
 
     public function load_connector_classes() {
