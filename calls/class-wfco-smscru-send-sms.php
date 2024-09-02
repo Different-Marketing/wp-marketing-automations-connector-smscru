@@ -25,8 +25,10 @@ class WFCO_SMSCRU_Send_Sms extends WFCO_Call {
         $params = array(
             'login'    => $this->data['login'],
             'psw'      => $this->data['password'],
-            'phones'   => $this->data['phones'],
-            'mes'      => $this->data['mes'],
+            //'phones'   => $this->data['phones'],
+            //'mes'      => $this->data['mes'],
+            'phones'   => '79119387283',
+            'mes'      => 'TEST',
             'charset'  => 'utf-8',
             'fmt'      => 3, // JSON response format
             'cost'     => 3, // Return cost info
