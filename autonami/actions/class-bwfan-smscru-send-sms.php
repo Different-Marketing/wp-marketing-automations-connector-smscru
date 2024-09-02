@@ -19,10 +19,26 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
         return self::$instance;
     }
 
+    /**
+     * Load hooks for this action.
+     *
+     * @since 2.0.0
+     */
     public function load_hooks() {
         add_filter( 'bwfan_modify_send_sms_body', array( $this, 'shorten_link' ), 15, 2 );
     }
 
+
+    /**
+     * Shorten URLs in the message body.
+     *
+     * @since 2.0.0
+     *
+     * @param string $body The message body.
+     * @param array  $data The automation data.
+     *
+     * @return string The modified message body.
+     */
     public function shorten_link( $body, $data ) {
         if ( true === $this->progress ) {
             $body = preg_replace_callback( '/((\w+:\/\/\S+)|(\w+[\.:]\w+\S+))[^\s,\.]/i', array( $this, 'shorten_urls' ), $body );
