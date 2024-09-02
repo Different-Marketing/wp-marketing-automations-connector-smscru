@@ -5,6 +5,11 @@ class BWFCO_SMSCRU extends BWF_CO {
     public static $instance = null;
     public $v2 = true;
 
+    /**
+     * Constructor.
+     *
+     * @since 2.0.0
+     */
     public function __construct() {
         $this->connector_url     = WFCO_SMSCRU_PLUGIN_URL;
         $this->dir               = __DIR__;

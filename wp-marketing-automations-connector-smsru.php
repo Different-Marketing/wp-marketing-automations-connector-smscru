@@ -51,6 +51,12 @@ final class WFCO_SMSCRU {
         add_action( 'bwfan_loaded', [ $this, 'init_smscru' ] );
     }
 
+    /**
+     * Returns the instance of the class.
+     *
+     * @return WFCO_SMSCRU|null
+     * @since 1.0.0
+     */
     public static function get_instance() {
         if ( null === self::$_instance ) {
             self::$_instance = new self();
@@ -58,6 +64,13 @@ final class WFCO_SMSCRU {
         return self::$_instance;
     }
 
+    /**
+     * Initialization of the connector.
+     *
+     * Includes the main connector class and the class of the action.
+     *
+     * @since 2.0.0
+     */
     public function init_smscru() {
         require WFCO_SMSCRU_PLUGIN_DIR . '/includes/class-wfco-smscru-common.php';
         require WFCO_SMSCRU_PLUGIN_DIR . '/includes/class-wfco-smscru-call.php';

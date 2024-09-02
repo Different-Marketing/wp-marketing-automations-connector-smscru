@@ -8,14 +8,40 @@ class WFCO_SMSCRU_Call {
 
     protected $data = array();
 
+    /**
+     * Constructor
+     *
+     * @since  1.0.0
+     *
+     * @return void
+     */
     public function __construct() {
         // Constructor
     }
 
+    /**
+     * Set data for the call
+     *
+     * @param array $data Data for the call
+     *
+     * @since 1.0.0
+     *
+     * @return void
+     */
     public function set_data($data) {
         $this->data = $data;
     }
 
+    /**
+     * Process the call
+     *
+     * @since 1.0.0
+     *
+     * @return array An associative array containing the result of the call.
+     *               The array will have a 'status' key with a boolean value,
+     *               a 'message' key with a string value, and a 'data' key with
+     *               an array of the response from SMSC.ru.
+     */
     public function process() {
         $endpoint = WFCO_SMSCRU_Common::get_api_endpoint();
         $headers = WFCO_SMSCRU_Common::get_headers();

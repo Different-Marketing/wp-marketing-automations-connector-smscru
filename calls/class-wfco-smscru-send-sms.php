@@ -10,10 +10,22 @@ class WFCO_SMSCRU_Send_Sms extends WFCO_Call {
     private static $ins = null;
     private $api_endpoint = 'https://smsc.ru/sys/send.php';
 
+    /**
+     * Initializes a new instance of the WFCO_SMSCRU_Send_Sms class.
+     *
+     * @return void
+     * @since 1.0.0
+     */
     public function __construct() {
         $this->required_fields = array('login', 'password', 'phones', 'mes');
     }
 
+    /**
+     * Returns the instance of the class.
+     *
+     * @return WFCO_SMSCRU_Send_Sms|null
+     * @since 1.0.0
+     */
     public static function get_instance() {
         if (null === self::$ins) {
             self::$ins = new self();
@@ -21,6 +33,18 @@ class WFCO_SMSCRU_Send_Sms extends WFCO_Call {
         return self::$ins;
     }
 
+    /**
+     * Sends SMS using SMSC.ru API.
+     * 
+     * This method processes the data and sends the request to SMSC.ru API.
+     * It returns the response from SMSC.ru API in JSON format.
+     * 
+     * @return array An associative array containing the result of the call.
+     *               The array will have a 'status' key with a boolean value,
+     *               and a 'message' key with a string value.
+     *               If the call is successful, the array will also have a 'data'
+     *               key with the response from SMSC.ru.
+     */
     public function process() {
         $params = array(
             'login'    => $this->data['login'],

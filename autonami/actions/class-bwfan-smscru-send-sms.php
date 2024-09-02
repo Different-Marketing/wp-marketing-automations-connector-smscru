@@ -5,6 +5,14 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
     private $progress = false;
     public $support_language = true;
 
+    /**
+     * Initialize the class
+     *
+     * Sets the action name and description
+     * Sets the support for versions
+     *
+     * @return void
+     */
     public function __construct() {
         $this->action_name = __( 'Send Message', 'autonami-automations-connectors' );
         $this->action_desc = __( 'This action sends a message via SMSC.ru', 'autonami-automations-connectors' );
@@ -12,6 +20,12 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
         $this->support_v1  = false;
     }
 
+    /**
+     * Returns the instance of the class.
+     *
+     * @return BWFAN_SMSCRU_Send_Sms
+     * @since 1.0.0
+     */
     public static function get_instance() {
         if ( null === self::$instance ) {
             self::$instance = new self();
@@ -46,6 +60,15 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
         return preg_replace_callback( '/((\w+:\/\/\S+)|(\w+[\.:]\w+\S+))[^\s,\.]/i', array( $this, 'unsubscribe_url_with_mode' ), $body );
     }
 
+    /**
+     * Shorten URLs in the message body.
+     *
+     * @since 2.0.0
+     *
+     * @param array $matches The matches from the preg_replace_callback.
+     *
+     * @return string The modified message body.
+     */
     protected function shorten_urls( $matches ) {
         $string = $matches[0];
         if ( method_exists( 'BWFAN_Connectors_Common', 'get_shorten_url' ) ) {
@@ -54,6 +77,16 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
         return do_shortcode( '[bwfan_bitly_shorten]' . $string . '[/bwfan_bitly_shorten]' );
     }
 
+
+
+    /**
+     * Make v2 data for action.
+     *
+     * @param array $automation_data Automation data.
+     * @param array $step_data       Step data.
+     *
+     * @return array v2 data.
+     */
     public function make_v2_data( $automation_data, $step_data ) {
         $this->add_action();
         $this->progress = true;
@@ -83,94 +116,113 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
         return $data_to_set;
     }
 
-/**
-  * Execute the current action.
-  * Return 3 for successful execution , 4 for permanent failure.
-  * Выполняет отправку SMS
-  * @param $action_data
-  *
-  * @return array
-  */
-  public function execute_action( $action_data ) {
-    global $wpdb;
-    $this->set_data( $action_data['processed_data'] );
-    $this->data['task_id'] = $action_data['task_id'];
+    /**
+     * Execute the current action.
+     * Return 3 for successful execution , 4 for permanent failure.
+     * Выполняет отправку SMS
+     * @param $action_data
+     *
+     * @return array
+     */
+    public function execute_action( $action_data ) {
+        global $wpdb;
+        $this->set_data( $action_data['processed_data'] );
+        $this->data['task_id'] = $action_data['task_id'];
 
-    // Attach track id
-    $sql_query         = 'Select meta_value FROM {table_name} WHERE bwfan_task_id = %d AND meta_key = %s';
-    $sql_query         = $wpdb->prepare( $sql_query, $this->data['task_id'], 't_track_id' );
-    $gids              = BWFAN_Model_Taskmeta::get_results( $sql_query );
-    $this->data['gid'] = '';
-    if ( ! empty( $gids ) && is_array( $gids ) ) {
-     foreach ( $gids as $gid ) {
-      $this->data['gid'] = $gid['meta_value'];
-     }
-    }
+        // Attach track id
+        $sql_query         = 'Select meta_value FROM {table_name} WHERE bwfan_task_id = %d AND meta_key = %s';
+        $sql_query         = $wpdb->prepare( $sql_query, $this->data['task_id'], 't_track_id' );
+        $gids              = BWFAN_Model_Taskmeta::get_results( $sql_query );
+        $this->data['gid'] = '';
+        if ( ! empty( $gids ) && is_array( $gids ) ) {
+            foreach ( $gids as $gid ) {
+                $this->data['gid'] = $gid['meta_value'];
+            }
+        }
     
-    // Validate promotional SMS
-    if ( 1 === absint( $this->data['promotional_sms'] ) && ( false === apply_filters( 'bwfan_force_promotional_sms', false, $this->data ) ) ) {
-     $where             = array(
-      'recipient' => $this->data['number'],
-      'mode'      => 2,
-     );
-     $check_unsubscribe = BWFAN_Model_Message_Unsubscribe::get_message_unsubscribe_row( $where );
+        // Validate promotional SMS
+        if ( 1 === absint( $this->data['promotional_sms'] ) && ( false === apply_filters( 'bwfan_force_promotional_sms', false, $this->data ) ) ) {
+            $where             = array(
+                'recipient' => $this->data['number'],
+                'mode'      => 2,
+            );
+            $check_unsubscribe = BWFAN_Model_Message_Unsubscribe::get_message_unsubscribe_row( $where );
+    
+            if ( ! empty( $check_unsubscribe ) ) {
+                $this->progress = false;
+                return array(
+                    'status'  => 4,
+                    'message' => __( 'User is already unsubscribed', 'autonami-automations-connectors' ),
+                );
+            }
+        }
   
-     if ( ! empty( $check_unsubscribe ) ) {
-      $this->progress = false;
-      return array(
-       'status'  => 4,
-       'message' => __( 'User is already unsubscribed', 'autonami-automations-connectors' ),
-      );
-     }
+        // Modify SMS body
+        $this->data['text'] = BWFAN_Connectors_Common::modify_sms_body( $this->data['text'], $this->data );
+        // Validate connector
+        $load_connector = WFCO_Load_Connectors::get_instance();
+        $call_class     = $load_connector->get_call( 'wfco_smscru_send_sms' );
+        if ( is_null( $call_class ) ) {
+            $this->progress = false;
+            return array(
+                'status'  => 4,
+                'message' => __( 'Send SMS call not found', 'autonami-automations-connectors' ),
+            );
+        }
+  
+        $integration            = BWFAN_SMSCRU_Integration::get_instance();
+        $this->data['login']    = $integration->get_settings( 'login' );
+        $this->data['password'] = $integration->get_settings( 'password' );
+    
+        $call_class->set_data( $this->data );
+        $response = $call_class->process();
+        do_action( 'bwfan_sendsms_action_response', $response, $this->data );
+    
+        if ( is_array( $response ) && true === $response['status'] ) {
+            $this->progress = false;
+            return array(
+                'status'  => 3,
+                'message' => __( 'SMS sent successfully.', 'autonami-automations-connectors' ),
+            );
+        }
+  
+        $this->progress = false;
+        
+        return array(
+            'status'  => 4,
+            'message' => isset( $response['message'] ) ? $response['message'] : __( 'SMS could not be sent.', 'autonami-automations-connectors' ),
+        );
     }
-  
-    // Modify SMS body
-    $this->data['text'] = BWFAN_Connectors_Common::modify_sms_body( $this->data['text'], $this->data );
-    // Validate connector
-    $load_connector = WFCO_Load_Connectors::get_instance();
-    $call_class     = $load_connector->get_call( 'wfco_smscru_send_sms' );
-    if ( is_null( $call_class ) ) {
-     $this->progress = false;
-     return array(
-      'status'  => 4,
-      'message' => __( 'Send SMS call not found', 'autonami-automations-connectors' ),
-     );
-    }
-  
-    $integration            = BWFAN_SMSCRU_Integration::get_instance();
-    $this->data['login']    = $integration->get_settings( 'login' );
-    $this->data['password'] = $integration->get_settings( 'password' );
-  
-    $call_class->set_data( $this->data );
-    $response = $call_class->process();
-    do_action( 'bwfan_sendsms_action_response', $response, $this->data );
-  
-    if ( is_array( $response ) && true === $response['status'] ) {
-     $this->progress = false;
-     return array(
-      'status'  => 3,
-      'message' => __( 'SMS sent successfully.', 'autonami-automations-connectors' ),
-     );
-    }
-  
-    $this->progress = false;
-    return array(
-     'status'  => 4,
-     'message' => isset( $response['message'] ) ? $response['message'] : __( 'SMS could not be sent.', 'autonami-automations-connectors' ),
-    );
-   }
 
-   public function handle_response_v2( $response ) {
-    do_action( 'bwfan_sendsms_action_response', $response, $this->data );
-    if ( is_array( $response ) && true === $response['status'] ) {
-     $this->progress = false;
-     return $this->success_message( __( 'SMS sent successfully.', 'autonami-automations-connectors' ) );
-    }
-  
-    $this->progress = false;
-    return $this->skipped_response( isset( $response['message'] ) ? $response['message'] : __( 'SMS could not be sent.', 'autonami-automations-connectors' ) );
-   }
+   /**
+    * Handle response for V2
+    *
+    * @param array $response V2 response.
+    *
+    * @return array
+    */
+    public function handle_response_v2( $response ) {
+        do_action( 'bwfan_sendsms_action_response', $response, $this->data );
+        if ( is_array( $response ) && true === $response['status'] ) {
+            $this->progress = false;
 
+            return $this->success_message( __( 'SMS sent successfully.', 'autonami-automations-connectors' ) );
+        }
+    
+        $this->progress = false;
+
+        return $this->skipped_response( isset( $response['message'] ) ? $response['message'] : __( 'SMS could not be sent.', 'autonami-automations-connectors' ) );
+    }
+
+    /**
+     * Returns an array of field schema for the SMSC.ru connector.
+     *
+     * The schema includes fields for recipient phone number and message body,
+     * each with their respective labels, types, classes, and placeholders. Both
+     * fields are required.
+     *
+     * @return array An array of field schema.
+     */
     public function get_fields_schema() {
         return [
             [
@@ -196,19 +248,40 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
             // Другие поля...
         ];
     }
+    
+    /**
+     * Adds filters to change the newline separator in billing and shipping addresses.
+     *
+     * This method is called by the parent class's constructor.
+     */
     private function add_action() {
         add_filter( 'bwfan_order_billing_address_separator', array( $this, 'change_br_to_slash_n' ) );
         add_filter( 'bwfan_order_shipping_address_separator', array( $this, 'change_br_to_slash_n' ) );
-       }
+    }
       
-          private function remove_action() {
+    /**
+     * Removes the filters that were added in add_action.
+     * 
+     * Filters are removed for bwfan_order_billing_address_params and
+     * bwfan_order_shipping_address_separator.
+     */
+    private function remove_action() {
         remove_filter( 'bwfan_order_billing_address_params', array( $this, 'change_br_to_slash_n' ) );
         remove_filter( 'bwfan_order_shipping_address_separator', array( $this, 'change_br_to_slash_n' ) );
-       }
+    }
 
-       public function change_br_to_slash_n( $params ) {
-		return "\n";
+    /**
+     * Replaces <br /> with \n in the given string.
+     * 
+     * @param string $params The string to replace <br /> with \n.
+     * 
+     * @return string The string with <br /> replaced with \n.
+     */
+    public function change_br_to_slash_n( $params ) {
+		
+        return "\n";
 	}
+
 }
 
 return 'BWFAN_SMSCRU_Send_Sms';

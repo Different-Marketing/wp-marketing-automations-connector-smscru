@@ -8,6 +8,14 @@ class WFCO_SMSCRU_Common {
 
     public static $headers = null;
 
+    /**
+     * Set the headers array with the Authorization and Content-Type headers.
+     *
+     * @param string $login  The login to use for the Authorization header.
+     * @param string $password  The password to use for the Authorization header.
+     *
+     * @return void
+     */
     public static function set_headers($login, $password) {
         self::$headers = array(
             'Authorization' => 'Basic ' . base64_encode($login . ':' . $password),
@@ -15,14 +23,31 @@ class WFCO_SMSCRU_Common {
         );
     }
 
+    /**
+     * Get the headers array set by set_headers.
+     *
+     * @return array The headers array.
+     */
     public static function get_headers() {
         return self::$headers;
     }
 
+    /**
+     * Get the API endpoint URL for SMSC.ru.
+     *
+     * @return string The API endpoint URL.
+     */
     public static function get_api_endpoint() {
         return 'https://smsc.ru/sys/send.php';
     }
 
+    /**
+     * Handle errors from API responses.
+     *
+     * @param array|WP_Error $response The API response to handle the error for.
+     *
+     * @return string The error message if an error occurred, otherwise an empty string.
+     */
     public static function handle_error($response) {
         $error_message = '';
 
