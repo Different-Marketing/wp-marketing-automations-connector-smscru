@@ -96,6 +96,10 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
             'name'            => BWFAN_Common::decode_merge_tags( '{{customer_first_name}}' ),
             'promotional_sms' => ( isset( $step_data['promotional_sms'] ) ) ? 1 : 0,
             'append_utm'      => ( isset( $step_data['sms_append_utm'] ) ) ? 1 : 0,
+            'sms_utm_source'  => isset($step_data['sms_utm_source']) ? $step_data['sms_utm_source'] : '',
+            'sms_utm_medium'  => isset($step_data['sms_utm_medium']) ? $step_data['sms_utm_medium'] : '',
+            'sms_utm_campaign'=> isset($step_data['sms_utm_campaign']) ? $step_data['sms_utm_campaign'] : '',
+            'sms_utm_term'    => isset($step_data['sms_utm_term']) ? $step_data['sms_utm_term'] : '',
             'number'          => ( isset( $step_data['sms_to'] ) ) ? BWFAN_Common::decode_merge_tags( $step_data['sms_to'] ) : '',
             'phone'           => ( isset( $step_data['sms_to'] ) ) ? BWFAN_Common::decode_merge_tags( $step_data['sms_to'] ) : '',
             'event'           => ( isset( $step_data['event_data'] ) && isset( $step_data['event_data']['event_slug'] ) ) ? $step_data['event_data']['event_slug'] : '',
@@ -108,9 +112,49 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
         $data_to_set['password'] = isset( $step_data['connector_data']['password'] ) ? $step_data['connector_data']['password'] : '';
 
         // UTM параметры и другие настройки
+        if ( isset( $step_data['sms_utm_source'] ) && ! empty( $step_data['sms_utm_source'] ) ) {
+			$data_to_set['utm_source'] = BWFAN_Common::decode_merge_tags( $step_data['sms_utm_source'] );
+		}
+		if ( isset( $step_data['sms_utm_medium'] ) && ! empty( $step_data['sms_utm_medium'] ) ) {
+			$data_to_set['utm_medium'] = BWFAN_Common::decode_merge_tags( $step_data['sms_utm_medium'] );
+		}
+		if ( isset( $step_data['sms_utm_campaign'] ) && ! empty( $step_data['sms_utm_campaign'] ) ) {
+			$data_to_set['utm_campaign'] = BWFAN_Common::decode_merge_tags( $step_data['sms_utm_campaign'] );
+		}
+		if ( isset( $step_data['sms_utm_term'] ) && ! empty( $step_data['sms_utm_term'] ) ) {
+			$data_to_set['utm_term'] = BWFAN_Common::decode_merge_tags( $step_data['sms_utm_term'] );
+		}
 
+        // TODO: what is global ?
+		if ( isset( $automation_data['global'] ) && isset( $automation_data['global']['order_id'] ) ) {
+			$data_to_set['order_id'] = $automation_data['global']['order_id'];
+		} elseif ( isset( $automation_data['global'] ) && isset( $automation_data['global']['cart_abandoned_id'] ) ) {
+			$data_to_set['cart_abandoned_id'] = $automation_data['global']['cart_abandoned_id'];
+		}
+
+		/** TODO: If promotional checkbox is not checked, then empty the {{unsubscribe_link}} merge tag */
+		if ( isset( $data_to_set['promotional_sms'] ) && 0 === absint( $data_to_set['promotional_sms'] ) ) {
+			$data_to_set['text'] = str_replace( '{{unsubscribe_link}}', '', $data_to_set['text'] );
+		}
+
+        /**  TODO: Append UTM and Create Conversation (Engagement Tracking) */
         $data_to_set['text'] = stripslashes( $data_to_set['text'] );
         $data_to_set['text'] = BWFAN_Connectors_Common::modify_sms_body( $data_to_set['text'], $data_to_set );
+
+        /** TODO: Validating promotional sms */
+		if ( 1 === absint( $data_to_set['promotional_sms'] ) && ( false === apply_filters( 'bwfan_force_promotional_sms', false, $data_to_set ) ) ) {
+			$where             = array(
+				'recipient' => $data_to_set['phone'],
+				'mode'      => 2,
+			);
+			$check_unsubscribe = BWFAN_Model_Message_Unsubscribe::get_message_unsubscribe_row( $where );
+
+			if ( ! empty( $check_unsubscribe ) ) {
+				$this->progress = false;
+
+				$data_to_set['contact_unsubscribed'] = true;
+			}
+		}
 
         $this->remove_action();
         return $data_to_set;
@@ -245,7 +289,100 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
                 "description" => '',
                 "required"    => true,
             ],
-            // Другие поля...
+            [
+                'id'            => 'promotional_sms',
+                'checkboxlabel' => __( "Mark as Promotional", 'autonami-automations-connectors' ),
+                'type'          => 'checkbox',
+                "class"         => '',
+                'hint'          => __( 'SMS marked as promotional will not be send to the unsubscribers.', 'autonami-automations-connectors' ),
+                'description'   => '',
+                "required"      => false,
+            ],
+            [
+                'id'            => 'sms_append_utm',
+                'checkboxlabel' => __( " Add UTM parameters to the links", 'autonami-automations-connectors' ),
+                'type'          => 'checkbox',
+                "class"         => '',
+                'hint'          => __( 'Add UTM parameters in all the links present in the sms.', 'autonami-automations-connectors' ),
+                'description'   => '',
+                "required"      => false,
+            ],
+            [
+                'id'          => 'sms_utm_source',
+                'label'       => __( "UTM Source", 'autonami-automations-connectors' ),
+                'type'        => 'text',
+                'placeholder' => "",
+                "class"       => 'bwfan-input-wrapper',
+                'tip'         => '',
+                "description" => __( '', 'autonami-automations-connectors' ),
+                "required"    => false,
+                'toggler'     => array(
+                    'fields'   => array(
+                        array(
+                            'id'    => 'sms_append_utm',
+                            'value' => true,
+                        ),
+                    ),
+                    'relation' => 'AND',
+                ),
+            ],
+            [
+                'id'          => 'sms_utm_medium',
+                'label'       => __( "UTM Medium", 'autonami-automations-connectors' ),
+                'type'        => 'text',
+                'placeholder' => "",
+                "class"       => 'bwfan-input-wrapper',
+                'tip'         => '',
+                "description" => __( '', 'autonami-automations-connectors' ),
+                "required"    => false,
+                'toggler'     => array(
+                    'fields'   => array(
+                        array(
+                            'id'    => 'sms_append_utm',
+                            'value' => true,
+                        ),
+                    ),
+                    'relation' => 'AND',
+                ),
+            ],
+            [
+                'id'          => 'sms_utm_campaign',
+                'label'       => __( "UTM Campaign", 'autonami-automations-connectors' ),
+                'type'        => 'text',
+                'placeholder' => "",
+                "class"       => 'bwfan-input-wrapper',
+                'tip'         => '',
+                "description" => __( '', 'autonami-automations-connectors' ),
+                "required"    => false,
+                'toggler'     => array(
+                    'fields'   => array(
+                        array(
+                            'id'    => 'sms_append_utm',
+                            'value' => true,
+                        ),
+                    ),
+                    'relation' => 'AND',
+                ),
+            ],
+            [
+                'id'          => 'sms_utm_term',
+                'label'       => __( "UTM Term", 'autonami-automations-connectors' ),
+                'type'        => 'text',
+                'placeholder' => "",
+                "class"       => 'bwfan-input-wrapper',
+                'tip'         => '',
+                "description" => __( '', 'autonami-automations-connectors' ),
+                "required"    => false,
+                'toggler'     => array(
+                    'fields'   => array(
+                        array(
+                            'id'    => 'sms_append_utm',
+                            'value' => true,
+                        ),
+                    ),
+                    'relation' => 'AND',
+                ),
+            ],
         ];
     }
     
