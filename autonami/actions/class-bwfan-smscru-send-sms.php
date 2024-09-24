@@ -1,5 +1,5 @@
 <?php
-
+//https://smsc.ru/api/#menu
 class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
     private static $instance = null;
     private $progress = false;
@@ -60,15 +60,18 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
         return preg_replace_callback( '/((\w+:\/\/\S+)|(\w+[\.:]\w+\S+))[^\s,\.]/i', array( $this, 'unsubscribe_url_with_mode' ), $body );
     }
 
-    /**
-     * Shorten URLs in the message body.
-     *
-     * @since 2.0.0
-     *
-     * @param array $matches The matches from the preg_replace_callback.
-     *
-     * @return string The modified message body.
-     */
+	/**
+	 * Shortens the given URL by checking if the method for shortening URLs exists in the
+	 * BWFAN_Connectors_Common class. If it does, it calls that method to shorten the URL.
+	 * If the method does not exist, it uses the do_shortcode function to shorten the URL
+	 * by applying the [bwfan_bitly_shorten] shortcode.
+	 *
+     * TODO: функция аналогичная twillo и smsniaga
+	 * Обрабатывает сокращение ссылок в теле сообщения.
+     * 
+	 * @param array $matches An array containing matches from a regular expression.
+	 * @return string The shortened URL.
+	 */
     protected function shorten_urls( $matches ) {
         $string = $matches[0];
         if ( method_exists( 'BWFAN_Connectors_Common', 'get_shorten_url' ) ) {
@@ -76,7 +79,6 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
         }
         return do_shortcode( '[bwfan_bitly_shorten]' . $string . '[/bwfan_bitly_shorten]' );
     }
-
 
 
     /**
@@ -175,7 +177,7 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
 
         // Attach track id
         $sql_query         = 'Select meta_value FROM {table_name} WHERE bwfan_task_id = %d AND meta_key = %s';
-        $sql_query         = $wpdb->prepare( $sql_query, $this->data['task_id'], 't_track_id' );
+        $sql_query         = $wpdb->prepare( $sql_query, $this->data['task_id'], 't_track_id' ); //phpcs:ignore WordPress.DB.PreparedSQL
         $gids              = BWFAN_Model_Taskmeta::get_results( $sql_query );
         $this->data['gid'] = '';
         if ( ! empty( $gids ) && is_array( $gids ) ) {
@@ -201,8 +203,9 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
             }
         }
   
-        // Modify SMS body
+        // Modify SMS body Append UTM and Create Conversation (Engagement Tracking)
         $this->data['text'] = BWFAN_Connectors_Common::modify_sms_body( $this->data['text'], $this->data );
+        
         // Validate connector
         $load_connector = WFCO_Load_Connectors::get_instance();
         $call_class     = $load_connector->get_call( 'wfco_smscru_send_sms' );
@@ -221,7 +224,8 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
         $call_class->set_data( $this->data );
         $response = $call_class->process();
         do_action( 'bwfan_sendsms_action_response', $response, $this->data );
-    
+        
+        /*
         if ( is_array( $response ) && true === $response['status'] ) {
             $this->progress = false;
             return array(
@@ -229,16 +233,62 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
                 'message' => __( 'SMS sent successfully.', 'autonami-automations-connectors' ),
             );
         }
-  
+         */
+
+        // New response validate
+        if (is_array($response) && isset($response['body'])) {
+            $body = json_decode($response['body'], true);
+            
+            if (isset($body['id']) && isset($body['cnt'])) {
+                $this->progress = false;
+                return array(
+                    'status'  => 3,
+                    'message' => sprintf(__('SMS sent successfully. Message ID: %s', 'autonami-automations-connectors'), $body['id']),
+                );
+            } elseif (isset($body['error'])) {
+                $message = sprintf(__('Message could not be sent. Error: %s', 'autonami-automations-connectors'), $body['error']);
+                $status  = 4;
+            }
+        }
+    
+        if (!isset($message)) {
+            $message = __('Unexpected response from SMSC.ru', 'autonami-automations-connectors');
+        }
+    
+        $this->progress = false;
+        return array(
+            'status'  => isset($status) ? $status : 4,
+            'message' => $message,
+        );
         $this->progress = false;
         
         return array(
-            'status'  => 4,
+            'status'  => $status,
             'message' => isset( $response['message'] ) ? $response['message'] : __( 'SMS could not be sent.', 'autonami-automations-connectors' ),
         );
     }
 
-   /**
+    /**
+	 * Добавляет параметр mode=2 к URL отписки.
+	 *
+	 * @param $matches
+	 *
+	 * @return string
+	 */
+	protected function unsubscribe_url_with_mode( $matches ) {
+		$string = $matches[0];
+
+		/** if its a unsubscriber link then pass the mode in url */
+		if ( strpos( $string, 'unsubscribe' ) !== false ) {
+			$string = add_query_arg( array(
+				'mode' => 2,
+			), $string );
+		}
+
+		return $string;
+	}
+
+    /**
     * Handle response for V2
     *
     * @param array $response V2 response.
