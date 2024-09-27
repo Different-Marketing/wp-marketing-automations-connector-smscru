@@ -84,8 +84,8 @@ final class BWFAN_SMSCRU_Integration extends BWFAN_Integration {
             'image_url'     => '',
         ) );
 
-        $to   = $args['phones'];
-        $body = $args['mes'];
+        $to   = $args['to'];
+        $body = $args['body'];
 
         error_log('SMSC.ru send_message args: ' . print_r($args, true));
 
@@ -114,6 +114,7 @@ final class BWFAN_SMSCRU_Integration extends BWFAN_Integration {
             'password' => $password,
             'mes'      => $body,
             'phones'   => $to,
+            'sender'   => 'Mamatov',
         );
         error_log('SMSC.ru call_args: ' . print_r($call_args, true));
 
