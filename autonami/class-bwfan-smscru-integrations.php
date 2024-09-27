@@ -79,13 +79,13 @@ final class BWFAN_SMSCRU_Integration extends BWFAN_Integration {
      */
     public function send_message( $args ) {
         $args = wp_parse_args( $args, array(
-            'to'        => '',
-            'body'      => '',
+            'phones'        => '',
+            'mes'      => '',
             'image_url' => '',
         ) );
 
-        $to   = $args['to'];
-        $body = $args['body'];
+        $to   = $args['phones'];
+        $body = $args['mes'];
 
         if ( empty( $to ) || empty( $body ) ) {
             return new WP_Error( 400, 'Data missing to send SMSC.ru SMS' );
@@ -108,8 +108,8 @@ final class BWFAN_SMSCRU_Integration extends BWFAN_Integration {
         $call_args = array(
             'login'    => $login,
             'password' => $password,
-            'text'     => $body,
-            'number'   => $to,
+            'mes'      => $body,
+            'phones'   => $to,
         );
 
         $load_connectors = WFCO_Load_Connectors::get_instance();

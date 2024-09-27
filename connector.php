@@ -98,8 +98,8 @@ class BWFCO_SMSCRU extends BWF_CO {
 
         $call_class = new WFCO_SMSCRU_Call();
         $call_class->set_data(array(
-            'phone'   => '79119387283', // Test phone number
-            'message' => 'Test message',
+            'phones'   => '79119387283', // Test phone number
+            'mes' => 'Test message',
         ));
 
         $response = $call_class->process();
