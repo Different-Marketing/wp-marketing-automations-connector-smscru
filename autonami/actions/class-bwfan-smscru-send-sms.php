@@ -103,9 +103,9 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
             'sms_utm_campaign'=> isset($step_data['sms_utm_campaign']) ? $step_data['sms_utm_campaign'] : '',
             'sms_utm_term'    => isset($step_data['sms_utm_term']) ? $step_data['sms_utm_term'] : '',
             'number'          => ( isset( $step_data['sms_to'] ) ) ? BWFAN_Common::decode_merge_tags( $step_data['sms_to'] ) : '',
-            'phone'           => ( isset( $step_data['sms_to'] ) ) ? BWFAN_Common::decode_merge_tags( $step_data['sms_to'] ) : '',
+            'phones'          => ( isset( $step_data['sms_to'] ) ) ? BWFAN_Common::decode_merge_tags( $step_data['sms_to'] ) : '',
             'event'           => ( isset( $step_data['event_data'] ) && isset( $step_data['event_data']['event_slug'] ) ) ? $step_data['event_data']['event_slug'] : '',
-            'text'            => BWFAN_Common::decode_merge_tags( $sms_body ),
+            'mes'            => BWFAN_Common::decode_merge_tags( $sms_body ),
             'step_id'         => isset( $automation_data['step_id'] ) ? $automation_data['step_id'] : '',
             'automation_id'   => isset( $automation_data['automation_id'] ) ? $automation_data['automation_id'] : '',
         );
@@ -218,10 +218,15 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
         }
   
         $integration            = BWFAN_SMSCRU_Integration::get_instance();
-        $this->data['login']    = $integration->get_settings( 'login' );
-        $this->data['password'] = $integration->get_settings( 'password' );
+        $call_args = array(
+            'login'    => $integration->get_settings( 'login' ),
+            'password' => $integration->get_settings( 'password' ),
+            'phones'   => $this->data['number'], // или $this->data['phone'], в зависимости от того, какой ключ используется
+            'mes'      => $this->data['text'],   // предполагая, что текст сообщения хранится в ключе 'text'
+        );
     
         $call_class->set_data( $this->data );
+        error_log('SMSC.ru data before sending: ' . print_r($call_args, true));
         $response = $call_class->process();
         do_action( 'bwfan_sendsms_action_response', $response, $this->data );
         

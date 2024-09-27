@@ -80,8 +80,8 @@ final class BWFAN_SMSCRU_Integration extends BWFAN_Integration {
     public function send_message( $args ) {
         $args = wp_parse_args( $args, array(
             'phones'        => '',
-            'mes'      => '',
-            'image_url' => '',
+            'mes'           => '',
+            'image_url'     => '',
         ) );
 
         $to   = $args['phones'];
