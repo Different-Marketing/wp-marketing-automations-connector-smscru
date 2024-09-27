@@ -136,7 +136,13 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
 
 		/** TODO: If promotional checkbox is not checked, then empty the {{unsubscribe_link}} merge tag */
 		if ( isset( $data_to_set['promotional_sms'] ) && 0 === absint( $data_to_set['promotional_sms'] ) ) {
-			$data_to_set['text'] = str_replace( '{{unsubscribe_link}}', '', $data_to_set['text'] );
+			if (isset($this->data['text']) && !is_null($this->data['text'])) {
+                $this->data['text'] = str_replace( '{{unsubscribe_link}}', '', $this->data['text'] );
+            } else {
+                // Если 'text' не определен или null, установите его значение по умолчанию
+                $this->data['text'] = '';
+                error_log('SMSC.ru: Text is not set in the data array');
+            }
 		}
 
         /**  TODO: Append UTM and Create Conversation (Engagement Tracking) */
@@ -171,8 +177,10 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
      * @return array
      */
     public function execute_action( $action_data ) {
+        error_log('SMSC.ru execute_action data: ' . print_r($action_data, true));
         global $wpdb;
         $this->set_data( $action_data['processed_data'] );
+        error_log('SMSC.ru processed_data: ' . print_r($this->data, true));
         $this->data['task_id'] = $action_data['task_id'];
 
         // Attach track id
@@ -221,10 +229,10 @@ class BWFAN_SMSCRU_Send_Sms extends BWFAN_Action {
         $call_args = array(
             'login'    => $integration->get_settings( 'login' ),
             'password' => $integration->get_settings( 'password' ),
-            'phones'   => $this->data['number'], // или $this->data['phone'], в зависимости от того, какой ключ используется
-            'mes'      => $this->data['text'],   // предполагая, что текст сообщения хранится в ключе 'text'
+            'phones'   => isset($this->data['number']) ? $this->data['number'] : (isset($this->data['phone']) ? $this->data['phone'] : ''),
+            'mes'      => isset($this->data['text']) ? $this->data['text'] : '',
         );
-    
+        error_log('SMSC.ru call_args: ' . print_r($call_args, true));
         $call_class->set_data( $this->data );
         error_log('SMSC.ru data before sending: ' . print_r($call_args, true));
         $response = $call_class->process();
