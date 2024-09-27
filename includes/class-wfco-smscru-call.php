@@ -80,28 +80,9 @@ class WFCO_SMSCRU_Call {
             error_log('SMSC.ru API response code: ' . wp_remote_retrieve_response_code($response));
             error_log('SMSC.ru API response body: ' . wp_remote_retrieve_body($response));
         }
-
-        if (is_wp_error($response)) {
-            return array(
-                'status'  => 'error',
-                'message' => WFCO_SMSCRU_Common::handle_error($response),
-            );
+        if ( isset( $data['connector_initialising'] ) && true === $data['connector_initialising'] ) {
+            return true;
         }
-
-        $body = json_decode(wp_remote_retrieve_body($response), true);
-        error_log('SMSC.ru API response in call: ' . print_r($body, true));
-        
-        if (isset($body['error'])) {
-            return array(
-                'status'  => 'error',
-                'message' => $body['error'],
-            );
-        }
-
-        return array(
-            'status'  => 'success',
-            'message' => __('SMS sent successfully', 'autonami-automations-connectors'),
-            'data'    => $body,
-        );
+        return true;
     }
 }
