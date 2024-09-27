@@ -4,11 +4,6 @@ class BWFCO_SMSCRU extends BWF_CO {
     public static $instance = null;
     public $v2 = true;
 
-    /**
-     * Constructor.
-     *
-     * @since 2.0.0
-     */
     public function __construct() {
         $this->keys_to_track = [
             'login',
@@ -64,33 +59,58 @@ class BWFCO_SMSCRU extends BWF_CO {
     }
 
     protected function get_api_data($posted_data) {
-        $login    = isset($posted_data['login']) ? $posted_data['login'] : '';
-        $password = isset($posted_data['password']) ? $posted_data['password'] : '';
-
-        WFCO_SMSCRU_Common::set_headers($login, $password);
-
-        $call_class = new WFCO_SMSCRU_Call();
-        $call_class->set_data(array(
-            'phones'   => '79119387283', // Test phone number
-            'mes' => 'Test message',
-        ));
-
-        $response = $call_class->process();
-
-        if ($response['status'] === 'success') {
-            return array(
-                'status'   => 'success',
-                'api_data' => array(
-                    'login'    => $login,
-                    'password' => $password,
-                ),
-            );
-        } else {
-            return array(
-                'status'  => 'failed',
-                'message' => $response['message'],
-            );
+        $resp_array = array(
+            'api_data' => $posted_data,
+            'status'   => 'failed',
+            'message'  => __('There was a problem authenticating your account. Please confirm your entered details.', 'autonami-automations-connectors'),
+        );
+    
+        if (empty($posted_data['login']) || empty($posted_data['password'])) {
+            $resp_array['message'] = __('Login and password are required.', 'autonami-automations-connectors');
+            return $resp_array;
         }
+    
+        $login = $posted_data['login'];
+        $password = $posted_data['password'];
+    
+        // Проверка баланса для аутентификации
+        // https://smsc.ru/sys/balance.php?login=mamatov&psw=sdrijgwyg460u7&fmt=3
+        $balance_url = "https://smsc.ru/sys/balance.php?login=" . urlencode($login) . "&psw=" . urlencode($password) . "&fmt=3";
+        $response = wp_remote_get($balance_url);
+    
+        if (is_wp_error($response)) {
+            $resp_array['message'] = $response->get_error_message();
+            return $resp_array;
+        }
+    
+        $body = wp_remote_retrieve_body($response);
+        $result = json_decode($body, true);
+    
+        if (isset($result['error'])) {
+            $resp_array['message'] = $result['error'];
+            return $resp_array;
+        }
+    
+        if (isset($result['balance'])) {
+            $resp_array['status'] = 'success';
+            $resp_array['message'] = sprintf(__('Successfully connected to SMSC.ru. Current balance: %s', 'autonami-automations-connectors'), $result['balance']);
+            $resp_array['api_data']['balance'] = $result['balance'];
+            $resp_array['api_data']['login'] = $login;
+            $resp_array['api_data']['password'] = $password;
+    
+            return $resp_array;
+        }
+    
+        $resp_array['message'] = __('Unknown error occurred while connecting to SMSC.ru', 'autonami-automations-connectors');
+        
+        return $resp_array;
+    }
+
+    public static function get_instance() {
+        if ( null === self::$instance ) {
+            self::$instance = new self();
+        }
+        return self::$instance;
     }
 
     /**

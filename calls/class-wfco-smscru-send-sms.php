@@ -1,31 +1,18 @@
 <?php
 
-/**
- * Этот класс отвечает за отправку SMS через API SMSC.ru. 
- * Он принимает необходимые параметры 
- * (логин, пароль, номера телефонов, текст сообщения) и отправляет запрос к API. 
- * Затем он обрабатывает ответ и возвращает результат.
- */
-class WFCO_SMSCRU_Send_Sms extends WFCO_Call {
-    private static $ins = null;
-    private $api_endpoint = 'https://smsc.ru/sys/send.php';
+if (!class_exists('WFCO_SMSCRU_Call')) {
+    require_once WFCO_SMSCRU_PLUGIN_DIR . '/includes/class-wfco-smscru-call.php';
+}
 
-    /**
-     * Initializes a new instance of the WFCO_SMSCRU_Send_Sms class.
-     *
-     * @return void
-     * @since 1.0.0
-     */
-    public function __construct() {
+class WFCO_SMSCRU_Send_Sms extends WFCO_SMSCRU_Call {
+    private static $instance = null;
+
+    protected function __construct() {
+        $this->id = 'wfco_smscru_send_sms';
+        $this->group = __('SMSC.ru', 'wp-marketing-automations-connector-smscru');
         $this->required_fields = array('login', 'password', 'phones', 'mes');
     }
 
-    /**
-     * Returns the instance of the class.
-     *
-     * @return WFCO_SMSCRU_Send_Sms|null
-     * @since 1.0.0
-     */
     public static function get_instance() {
         if (null === self::$instance) {
             self::$instance = new self();
@@ -33,75 +20,31 @@ class WFCO_SMSCRU_Send_Sms extends WFCO_Call {
         return self::$instance;
     }
 
-    /**
-     * Sends SMS using SMSC.ru API.
-     * 
-     * This method processes the data and sends the request to SMSC.ru API.
-     * It returns the response from SMSC.ru API in JSON format.
-     * 
-     * @return array An associative array containing the result of the call.
-     *               The array will have a 'status' key with a boolean value,
-     *               and a 'message' key with a string value.
-     *               If the call is successful, the array will also have a 'data'
-     *               key with the response from SMSC.ru.
-     */
     public function process() {
-        $params = array(
-            'login'    => $this->data['login'],
-            'psw'      => $this->data['password'],
-            'phones'   => $this->data['phones'],
-            'mes'      => $this->data['mes'],
-            //'phones'   => '79119387283',
-            //'mes'      => 'TEST',
-            'charset'  => 'utf-8',
-            'fmt'      => 3, // JSON response format
-            'cost'     => 3, // Return cost info
-            'sender'   => 'Mamatov',
-        );
-
-        error_log('SMSC.ru params in send-sms: ' . print_r($params, true));
-
-        if (!empty($this->data['sender'])) {
-            $params['sender'] = $this->data['sender'];
-        }
-
-        if (!empty($this->data['translit'])) {
-            $params['translit'] = $this->data['translit'];
-        }
-
-        $url = add_query_arg($params, $this->api_endpoint);
-
-        error_log('SMSC.ru full URL: ' . $url);
-
+        $login = $this->data['login'];
+        $password = $this->data['password'];
+        $phones = $this->data['phones'];
+        $message = $this->data['mes'];
+    
+        $url = "https://smsc.ru/sys/send.php?login=".urlencode($login)."&psw=".urlencode($password)."&phones=".urlencode($phones)."&mes=".urlencode($message)."&charset=utf-8&fmt=3";
         $response = wp_remote_get($url);
     
         if (is_wp_error($response)) {
-            error_log('SMSC.ru API error: ' . $response->get_error_message());
-            return array(
-                'status' => false,
-                'message' => $response->get_error_message(),
-            );
+            error_log("SMSC.ru API error: " . $response->get_error_message());
+            return array('status' => false, 'message' => $response->get_error_message());
         }
     
         $body = wp_remote_retrieve_body($response);
-        error_log('SMSC.ru API response body: ' . $body);
-
         $result = json_decode($body, true);
     
         error_log("SMSC.ru API response: " . print_r($result, true));
     
         if (isset($result['error'])) {
-            error_log('SMSC.ru API error from response: ' . $result['error']);
-            return array(
-                'status' => false,
-                'message' => $result['error'],
-            );
+            return array('status' => false, 'message' => $result['error']);
+        } elseif (isset($result['id'])) {
+            return array('status' => true, 'message' => 'SMS sent successfully');
+        } else {
+            return array('status' => false, 'message' => 'Unknown error occurred');
         }
-
-        return array(
-            'status' => true,
-            'message' => 'SMS sent successfully',
-            'data' => $result,
-        );
     }
 }
