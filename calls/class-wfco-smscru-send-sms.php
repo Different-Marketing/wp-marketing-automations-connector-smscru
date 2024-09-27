@@ -56,7 +56,10 @@ class WFCO_SMSCRU_Send_Sms extends WFCO_Call {
             'charset'  => 'utf-8',
             'fmt'      => 3, // JSON response format
             'cost'     => 3, // Return cost info
+            'sender'   => 'Mamatov',
         );
+
+        error_log('SMSC.ru params in send-sms: ' . print_r($params, true));
 
         if (!empty($this->data['sender'])) {
             $params['sender'] = $this->data['sender'];
@@ -68,9 +71,12 @@ class WFCO_SMSCRU_Send_Sms extends WFCO_Call {
 
         $url = add_query_arg($params, $this->api_endpoint);
 
+        error_log('SMSC.ru full URL: ' . $url);
+
         $response = wp_remote_get($url);
 
         if (is_wp_error($response)) {
+            error_log('SMSC.ru API error: ' . $response->get_error_message());
             return array(
                 'status' => false,
                 'message' => $response->get_error_message(),
@@ -78,9 +84,12 @@ class WFCO_SMSCRU_Send_Sms extends WFCO_Call {
         }
 
         $body = wp_remote_retrieve_body($response);
+        error_log('SMSC.ru API response body: ' . $body);
+
         $result = json_decode($body, true);
 
         if (isset($result['error'])) {
+            error_log('SMSC.ru API error from response: ' . $result['error']);
             return array(
                 'status' => false,
                 'message' => $result['error'],

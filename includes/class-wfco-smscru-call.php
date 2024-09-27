@@ -45,8 +45,14 @@ class WFCO_SMSCRU_Call {
     public function process() {
         $endpoint = WFCO_SMSCRU_Common::get_api_endpoint();
         $headers = WFCO_SMSCRU_Common::get_headers();
-
+        
+        error_log('SMSC.ru API endpoint in call: ' . $endpoint);
+        error_log('SMSC.ru headers in call: ' . print_r($headers, true));
+        error_log('SMSC.ru data in call: ' . print_r($this->data, true));
+        
         $body = array(
+            'login'   => isset($this->data['login']) ? $this->data['login'] : '',
+            'psw'     => isset($this->data['password']) ? $this->data['password'] : '',
             'phones'  => isset($this->data['phones']) ? $this->data['phones'] : '',
             'mes'     => isset($this->data['mes']) ? $this->data['mes'] : '',
             'charset' => 'utf-8',
@@ -54,7 +60,7 @@ class WFCO_SMSCRU_Call {
         );
 
         // Логирование для отладки
-        error_log('SMSC.ru data in WFCO_SMSCRU_Call: ' . print_r($this->data, true));
+        error_log('SMSC.ru request body: ' . print_r($body, true));
 
         $args = array(
             'headers' => $headers,
@@ -63,6 +69,13 @@ class WFCO_SMSCRU_Call {
         );
 
         $response = wp_remote_post($endpoint, $args);
+        // TODO log $response
+        if (is_wp_error($response)) {
+            error_log('SMSC.ru API error: ' . $response->get_error_message());
+        } else {
+            error_log('SMSC.ru API response code: ' . wp_remote_retrieve_response_code($response));
+            error_log('SMSC.ru API response body: ' . wp_remote_retrieve_body($response));
+        }
 
         if (is_wp_error($response)) {
             return array(
@@ -72,7 +85,8 @@ class WFCO_SMSCRU_Call {
         }
 
         $body = json_decode(wp_remote_retrieve_body($response), true);
-
+        error_log('SMSC.ru API response in call: ' . print_r($body, true));
+        
         if (isset($body['error'])) {
             return array(
                 'status'  => 'error',

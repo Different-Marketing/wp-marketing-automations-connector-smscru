@@ -87,7 +87,10 @@ final class BWFAN_SMSCRU_Integration extends BWFAN_Integration {
         $to   = $args['phones'];
         $body = $args['mes'];
 
+        error_log('SMSC.ru send_message args: ' . print_r($args, true));
+
         if ( empty( $to ) || empty( $body ) ) {
+            error_log('SMSC.ru: Missing phone number or message body');
             return new WP_Error( 400, 'Data missing to send SMSC.ru SMS' );
         }
 
@@ -97,6 +100,7 @@ final class BWFAN_SMSCRU_Integration extends BWFAN_Integration {
         $password = $settings['password'];
 
         if ( empty( $login ) || empty( $password ) ) {
+            error_log('SMSC.ru: Missing login or password');
             return new WP_Error( 404, 'Invalid / Missing saved connector data' );
         }
 
@@ -111,6 +115,7 @@ final class BWFAN_SMSCRU_Integration extends BWFAN_Integration {
             'mes'      => $body,
             'phones'   => $to,
         );
+        error_log('SMSC.ru call_args: ' . print_r($call_args, true));
 
         $load_connectors = WFCO_Load_Connectors::get_instance();
         $call            = $load_connectors->get_call( 'wfco_smscru_send_sms' );

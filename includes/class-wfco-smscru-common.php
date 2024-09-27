@@ -21,6 +21,7 @@ class WFCO_SMSCRU_Common {
             'Authorization' => 'Basic ' . base64_encode($login . ':' . $password),
             'Content-Type'  => 'application/json',
         );
+        error_log('SMSC.ru headers set: ' . print_r(self::$headers, true));
     }
 
     /**
