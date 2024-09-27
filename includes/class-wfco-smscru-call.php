@@ -47,11 +47,14 @@ class WFCO_SMSCRU_Call {
         $headers = WFCO_SMSCRU_Common::get_headers();
 
         $body = array(
-            'phones'  => $this->data['phone'],
-            'mes'     => $this->data['message'],
+            'phones'  => isset($this->data['phones']) ? $this->data['phones'] : '',
+            'mes'     => isset($this->data['mes']) ? $this->data['mes'] : '',
             'charset' => 'utf-8',
             'fmt'     => 3, // JSON response format
         );
+
+        // Логирование для отладки
+        error_log('SMSC.ru data in WFCO_SMSCRU_Call: ' . print_r($this->data, true));
 
         $args = array(
             'headers' => $headers,
