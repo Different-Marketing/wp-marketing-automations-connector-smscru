@@ -14,6 +14,11 @@ class WFCO_SMSCRU_Get_Balance extends WFCO_SMSCRU_Call {
         $this->required_fields = array('login', 'password');
     }
 
+    /**
+     * Returns the instance of the class.
+     *
+     * @return WFCO_SMSCRU_Get_Balance|null
+     */
     public static function get_instance() {
         if (null === self::$instance) {
             self::$instance = new self();
@@ -21,6 +26,15 @@ class WFCO_SMSCRU_Get_Balance extends WFCO_SMSCRU_Call {
         return self::$instance;
     }
 
+    /**
+     * Retrieves the balance of the SMSC.ru account.
+     *
+     * @return array An associative array containing the result of the call.
+     *               The array will have a 'status' key with a boolean value,
+     *               and a 'message' key with a string value.
+     *               If the call is successful, the array will also have a 'data'
+     *               key with the response from SMSC.ru.
+     */
     public function process() {
         $params = array(
             'login' => $this->data['login'],
