@@ -1,5 +1,19 @@
 # Autonami Marketing Automations Connector for SMSC.ru
 
+
+ * Plugin Name: Autonami Marketing Automations Connectors - SMSC.ru
+ * Plugin URI: https://my.mamatov.club
+ * Description: Now create SMSC.ru based automations with Autonami Marketing Automations for WordPress
+ * Version: 2.0.8
+ * Author: <a href="https://eredmonkey.link/">Evgeniu Rezanov</a>, Claude.ai
+ * Author URI: https://evgrezanov.github.io
+ * License: GPLv3 or later
+ * License URI: http://www.gnu.org/licenses/gpl-3.0.html
+ * Text Domain: autonami-automations-connectors
+ * Requires at least: 4.9
+ * Tested up to: 6.1.1
+
+
 ## Описание
 
 Этот плагин добавляет интеграцию SMSC.ru в Autonami Marketing Automations для WordPress. С его помощью вы сможете отправлять SMS-сообщения через сервис SMSC.ru в рамках ваших маркетинговых автоматизаций.
