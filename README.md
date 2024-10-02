@@ -5,7 +5,7 @@
  * Plugin URI: https://my.mamatov.club
  * Description: Now create SMSC.ru based automations with Autonami Marketing Automations for WordPress
  * Version: 2.0.8
- * Author: <a href="https://eredmonkey.link/">Evgeniu Rezanov</a>, Claude.ai
+ * Author: <a href="https://eredmonkey.link/">Evgeniy Rezanov</a>, Claude.ai
  * Author URI: https://evgrezanov.github.io
  * License: GPLv3 or later
  * License URI: http://www.gnu.org/licenses/gpl-3.0.html

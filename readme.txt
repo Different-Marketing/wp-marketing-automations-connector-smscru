@@ -1,5 +1,5 @@
 === Autonami Marketing Automations Connector for SMSC.ru ===
-Contributors: evgrezanov, claudeai
+Contributors: redmonkey73, claudeai
 Donate link: https://my.mamatov.club/
 Tags: autonami, marketing, automation, sms, smsc.ru
 Requires at least: 4.9
