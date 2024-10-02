@@ -4,7 +4,7 @@ Donate link: https://my.mamatov.club/
 Tags: autonami, marketing, automation, sms, smsc.ru
 Requires at least: 4.9
 Tested up to: 6.1.1
-Stable tag: 2.1.0
+Stable tag: 2.1.0-alpha
 Requires PHP: 7.0
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
