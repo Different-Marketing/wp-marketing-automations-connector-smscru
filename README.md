@@ -13,6 +13,9 @@
  * Requires at least: 4.9
  * Tested up to: 6.1.1
 
+## Testing
+Automation - TEST SMS
+URL - https://kursdoma.ru/op/brain3-optin/
 
 ## Описание
 
